@@ -49,9 +49,7 @@ export interface OnboardingData {
   default_word_count_min: number;
   default_word_count_max: number;
   content_categories: string[];
-  content_tags: string[];
   // Step 6
-  meta_description_style: string;
   title_preferences: string;
   // Step 7
   image_prompt_style: string;
@@ -62,7 +60,7 @@ export interface OnboardingData {
 }
 
 const DEFAULT_DATA: OnboardingData = {
-  brand_name: 'Mama Kim Cooks',
+  brand_name: '',
   site_url: '',
   brand_tagline: '',
   brand_story: '',
@@ -77,8 +75,6 @@ const DEFAULT_DATA: OnboardingData = {
   default_word_count_min: 800,
   default_word_count_max: 1200,
   content_categories: [],
-  content_tags: [],
-  meta_description_style: 'first-person',
   title_preferences: '',
   image_prompt_style: '',
   wp_site_url: '',
@@ -142,10 +138,9 @@ export function OnboardingWizard({ brandId, isNewBrand }: OnboardingWizardProps)
           default_word_count_min: data.default_word_count_min,
           default_word_count_max: data.default_word_count_max,
           content_categories: data.content_categories,
-          content_tags: data.content_tags,
+          content_tags: [],
           site_name: data.brand_name,
           site_url: data.site_url,
-          meta_description_style: data.meta_description_style,
           image_prompt_style: data.image_prompt_style,
           wp_site_url: data.wp_site_url || null,
           wp_username: data.wp_username || null,

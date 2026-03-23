@@ -17,13 +17,13 @@ export function Step1BrandIdentity({ data, updateData }: StepProps) {
         label="Brand name"
         value={data.brand_name}
         onChange={(e) => updateData({ brand_name: e.target.value })}
-        placeholder="Mama Kim Cooks"
+        placeholder="e.g. The Spice Jar, Urban Plates"
       />
       <Input
         label="Blog / website URL"
         value={data.site_url}
         onChange={(e) => updateData({ site_url: e.target.value })}
-        placeholder="https://mamakimcooks.com"
+        placeholder="https://yourblog.com"
       />
       <Input
         label="Brand tagline"
