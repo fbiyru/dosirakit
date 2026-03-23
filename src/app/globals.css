@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #FAFAF8;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F4F1EC;
+  --color-border: #E8E2D9;
+  --color-text: #1A1714;
+  --color-text-muted: #7A7269;
+  --color-accent: #C8873A;
+  --color-accent-light: #FDF3E7;
+  --color-accent-dark: #9E6520;
+  --color-success: #3A7D44;
+  --color-destructive: #C0392B;
+  --color-ink: #2C2420;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+}
