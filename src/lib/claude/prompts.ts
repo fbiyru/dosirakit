@@ -12,7 +12,6 @@ interface BrandSettings {
   content_categories: string[] | null;
   content_tags: string[] | null;
   image_prompt_style: string | null;
-  meta_description_style: string | null;
 }
 
 interface Angle {
@@ -167,7 +166,7 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
   "slug": "url-friendly-slug",
   "body": "Full article in markdown. Use ## for H2 subheadings, ### for H3. Use **bold** for key terms. Focus keyword must appear in first 100 words, at least 2-3 subheadings, and naturally throughout.",
   "meta_title": "SEO title, max 60 characters, include focus keyword",
-  "meta_description": "Compelling meta description, max 155 characters, include focus keyword naturally",
+  "meta_description": "Conversational, first-person meta description. Lead with the answer or hook. Under 155 characters. Include the focus keyword naturally.",
   "category": "Best matching category from: ${brandSettings.content_categories?.join(', ') || 'General'}",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "image_prompt": "Detailed AI image generation prompt for the featured image, based on this style: ${brandSettings.image_prompt_style || 'Professional food photography'}"

@@ -106,7 +106,6 @@ export function Step9Review({ data, goToStep }: StepProps) {
       </ReviewSection>
 
       <ReviewSection title="SEO" stepIndex={5} goToStep={goToStep}>
-        <Field label="Meta style" value={data.meta_description_style} />
         <Field label="Title preferences" value={data.title_preferences} />
       </ReviewSection>
 

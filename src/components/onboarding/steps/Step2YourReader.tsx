@@ -34,7 +34,7 @@ export function Step2YourReader({ data, updateData }: StepProps) {
         hint="Who reads your blog? Age, interests, cooking level, what they're looking for"
         value={data.target_audience}
         onChange={(e) => updateData({ target_audience: e.target.value })}
-        placeholder="E.g. Home cooks aged 25-45 who are curious about Korean food..."
+        placeholder="E.g. Home cooks aged 25-45 who want weeknight meal ideas..."
       />
       <div>
         <label className="block text-sm font-medium text-text mb-2">
