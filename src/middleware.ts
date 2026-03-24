@@ -34,11 +34,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Redirect unauthenticated users to login (except for login page and root)
+  // Redirect unauthenticated users to login (except for login page, root, and API routes)
   const isLoginPage = request.nextUrl.pathname === '/login';
   const isRoot = request.nextUrl.pathname === '/';
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
 
-  if (!session && !isLoginPage && !isRoot) {
+  if (!session && !isLoginPage && !isRoot && !isApiRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
