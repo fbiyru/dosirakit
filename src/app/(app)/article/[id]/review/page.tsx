@@ -276,11 +276,16 @@ export default function ReviewPage() {
                 />
               </div>
 
-              <TagInput
-                label="Tags"
-                value={content.tags}
-                onChange={(tags) => autoSave({ tags })}
-              />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-text">Tags</label>
+                  <CopyButton value={content.tags.join(', ')} />
+                </div>
+                <TagInput
+                  value={content.tags}
+                  onChange={(tags) => autoSave({ tags })}
+                />
+              </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">

@@ -22,6 +22,7 @@ interface Angle {
 
 interface Article {
   focus_keyword: string;
+  secondary_keywords: string[] | null;
   user_notes: string | null;
   story_provided: boolean;
   story_content: string | null;
@@ -156,6 +157,7 @@ ARTICLE BRIEF:
 - Angle/Direction: ${angle.title}
 - Direction notes: ${angle.description}
 - Target word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
+${article.secondary_keywords?.length ? `- Secondary keywords (include naturally where they fit, but do NOT force them — the focus keyword is still primary): ${article.secondary_keywords.join(', ')}` : ''}
 ${article.user_notes ? `- Author's additional notes: ${article.user_notes}` : ''}
 ${storySection}
 WRITE the full article. Then provide all metadata.

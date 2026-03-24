@@ -5,7 +5,7 @@ import { buildAnglesPrompt } from '@/lib/claude/prompts';
 
 export async function POST(request: Request) {
   try {
-    const { focus_keyword, user_notes, brand_id } = await request.json();
+    const { focus_keyword, secondary_keywords, user_notes, brand_id } = await request.json();
 
     if (!focus_keyword || !brand_id) {
       return NextResponse.json(
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       .insert({
         brand_id,
         focus_keyword,
+        secondary_keywords: secondary_keywords?.length ? secondary_keywords : null,
         user_notes: user_notes || null,
       })
       .select('id')

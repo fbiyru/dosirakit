@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 
 export default function NewArticlePage() {
   const [keyword, setKeyword] = useState('');
+  const [secondaryKeywords, setSecondaryKeywords] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -32,6 +33,10 @@ export default function NewArticlePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           focus_keyword: keyword.trim(),
+          secondary_keywords: secondaryKeywords
+            .split(',')
+            .map((k) => k.trim())
+            .filter(Boolean),
           user_notes: notes.trim() || null,
           brand_id: brandId,
         }),
@@ -65,6 +70,15 @@ export default function NewArticlePage() {
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="e.g. tteokbokki recipe, how to make kimchi at home"
               required
+            />
+
+            <Textarea
+              label="Secondary Keywords"
+              hint="Optional — paste or type keywords separated by commas"
+              value={secondaryKeywords}
+              onChange={(e) => setSecondaryKeywords(e.target.value)}
+              placeholder="e.g. gochujang sauce, korean street food, spicy rice cakes, tteok recipe"
+              className="min-h-[60px]"
             />
 
             <Textarea

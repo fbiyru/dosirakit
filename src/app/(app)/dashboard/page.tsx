@@ -113,7 +113,7 @@ export default function DashboardPage() {
               <span className="font-medium text-text">View All Articles</span>
             </Card>
           </Link>
-          <Link href="/onboarding">
+          <Link href="/settings">
             <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
               <Settings className="w-5 h-5 text-accent" />
               <span className="font-medium text-text">Brand Settings</span>

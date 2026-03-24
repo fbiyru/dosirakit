@@ -12,7 +12,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/article/new', label: 'New Article', icon: PenLine },
   { href: '/archive', label: 'Archive', icon: Archive },
-  { href: '/onboarding', label: 'Brand Settings', icon: Settings },
+  { href: '/settings', label: 'Brand Settings', icon: Settings },
 ];
 
 interface SidebarProps {
