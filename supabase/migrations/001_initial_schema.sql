@@ -50,8 +50,9 @@ create table public.brand_settings (
 create table public.articles (
   id              uuid primary key default uuid_generate_v4(),
   brand_id        uuid references public.brands(id) on delete cascade,
-  focus_keyword   text not null,
-  user_notes      text,
+  focus_keyword       text not null,
+  secondary_keywords  text[],
+  user_notes          text,
   -- Personal story inputs
   story_provided  boolean default false,
   story_content   text,
