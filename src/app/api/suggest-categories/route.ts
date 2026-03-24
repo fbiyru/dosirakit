@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const anthropic = getAnthropicClient();
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-5-20241022',
       max_tokens: 256,
       messages: [
         {
