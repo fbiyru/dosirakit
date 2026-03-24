@@ -98,8 +98,9 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('Angles API error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }
