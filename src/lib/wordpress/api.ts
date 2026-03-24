@@ -12,6 +12,9 @@ interface ArticleContent {
   body: string;
   category: string | null;
   tags: string[] | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  focus_keyword: string | null;
 }
 
 function getAuthHeader(username: string, appPassword: string): string {
@@ -145,6 +148,28 @@ export async function publishToWordPress(
   }
 
   const post = await res.json();
+
+  // Update RankMath SEO meta fields via post meta
+  const rankMathMeta: Record<string, string> = {};
+  if (content.meta_title) rankMathMeta['rank_math_title'] = content.meta_title;
+  if (content.meta_description) rankMathMeta['rank_math_description'] = content.meta_description;
+  if (content.focus_keyword) rankMathMeta['rank_math_focus_keyword'] = content.focus_keyword;
+
+  if (Object.keys(rankMathMeta).length > 0) {
+    const metaRes = await fetch(`${siteUrl}/wp-json/wp/v2/posts/${post.id}`, {
+      method: 'POST',
+      headers: {
+        Authorization: authHeader,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ meta: rankMathMeta }),
+    });
+
+    if (!metaRes.ok) {
+      console.warn('Failed to set RankMath meta fields:', await metaRes.text());
+    }
+  }
+
   return {
     post_id: post.id,
     post_url: post.link,

@@ -25,10 +25,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Article content not found' }, { status: 404 });
     }
 
-    // Fetch article for brand_id
+    // Fetch article for brand_id and focus keyword
     const { data: article } = await supabase
       .from('articles')
-      .select('brand_id')
+      .select('brand_id, focus_keyword')
       .eq('id', article_id)
       .single();
 
@@ -63,6 +63,9 @@ export async function POST(request: Request) {
         body: content.body,
         category: content.category,
         tags: content.tags,
+        meta_title: content.meta_title,
+        meta_description: content.meta_description,
+        focus_keyword: article.focus_keyword,
       }
     );
 
