@@ -33,22 +33,13 @@ export function BrandSwitcher({ brands, activeBrandId, onBrandChange }: BrandSwi
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Single brand — just show name
-  if (brands.length <= 1) {
-    return (
-      <div className="text-sm font-medium text-text truncate">
-        {activeBrand?.name ?? 'No brand'}
-      </div>
-    );
-  }
-
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between gap-2 w-full text-sm font-medium text-text hover:text-accent transition-colors"
       >
-        <span className="truncate">{activeBrand?.name}</span>
+        <span className="truncate">{activeBrand?.name ?? 'No brand'}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
