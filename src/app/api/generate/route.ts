@@ -113,6 +113,8 @@ export async function POST(request: Request) {
               category: parsed.category,
               tags: parsed.tags,
               image_prompt: parsed.image_prompt,
+              image_prompt_pinterest: parsed.image_prompt_pinterest || null,
+              image_prompt_social: parsed.image_prompt_social || null,
               word_count: wordCount,
             });
           }

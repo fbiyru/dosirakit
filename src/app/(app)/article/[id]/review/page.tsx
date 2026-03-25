@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { TagInput } from '@/components/ui/tag-input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, Archive, Send, Loader2, ExternalLink } from 'lucide-react';
+import { Copy, Check, Archive, Send, Loader2, ExternalLink, X, Plug, Image, Camera, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -25,6 +25,8 @@ interface ArticleContent {
   category: string;
   tags: string[];
   image_prompt: string;
+  image_prompt_pinterest: string;
+  image_prompt_social: string;
   word_count: number;
 }
 
@@ -56,14 +58,22 @@ export default function ReviewPage() {
   const [content, setContent] = useState<ArticleContent | null>(null);
   const [articleStatus, setArticleStatus] = useState<string>('draft');
   const [wpUrl, setWpUrl] = useState<string | null>(null);
+  const [wpConfigured, setWpConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [showWpModal, setShowWpModal] = useState(false);
+  const [wpForm, setWpForm] = useState({ site_url: '', username: '', app_password: '' });
+  const [testingWp, setTestingWp] = useState(false);
+  const [savingWp, setSavingWp] = useState(false);
+  const [brandId, setBrandId] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
+      const activeBrandId = localStorage.getItem('activeBrandId');
+      setBrandId(activeBrandId);
 
       const { data: articleData } = await supabase
         .from('articles')
@@ -74,6 +84,24 @@ export default function ReviewPage() {
       if (articleData) {
         setArticleStatus(articleData.status);
         setWpUrl(articleData.wp_post_url);
+      }
+
+      // Check WordPress configuration
+      if (activeBrandId) {
+        const { data: settings } = await supabase
+          .from('brand_settings')
+          .select('wp_site_url, wp_username, wp_app_password')
+          .eq('brand_id', activeBrandId)
+          .single();
+
+        if (settings?.wp_site_url && settings?.wp_username && settings?.wp_app_password) {
+          setWpConfigured(true);
+          setWpForm({
+            site_url: settings.wp_site_url,
+            username: settings.wp_username,
+            app_password: settings.wp_app_password,
+          });
+        }
       }
 
       const { data } = await supabase
@@ -95,6 +123,8 @@ export default function ReviewPage() {
           category: data.category ?? '',
           tags: data.tags ?? [],
           image_prompt: data.image_prompt ?? '',
+          image_prompt_pinterest: data.image_prompt_pinterest ?? '',
+          image_prompt_social: data.image_prompt_social ?? '',
           word_count: data.word_count ?? 0,
         });
       }
@@ -110,7 +140,6 @@ export default function ReviewPage() {
       const newContent = { ...content, ...updated };
       setContent(newContent);
 
-      // Recalculate word count if body changed
       if (updated.body !== undefined) {
         newContent.word_count = updated.body.split(/\s+/).filter(Boolean).length;
       }
@@ -130,6 +159,8 @@ export default function ReviewPage() {
             category: newContent.category,
             tags: newContent.tags,
             image_prompt: newContent.image_prompt,
+            image_prompt_pinterest: newContent.image_prompt_pinterest,
+            image_prompt_social: newContent.image_prompt_social,
             word_count: newContent.word_count,
             updated_at: new Date().toISOString(),
           })
@@ -174,6 +205,63 @@ export default function ReviewPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to publish');
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function handleTestWpConnection() {
+    setTestingWp(true);
+    try {
+      const { site_url, username, app_password } = wpForm;
+      if (!site_url || !username || !app_password) {
+        toast.error('All fields are required');
+        setTestingWp(false);
+        return;
+      }
+
+      const cleanUrl = site_url.replace(/\/+$/, '');
+      const credentials = btoa(`${username}:${app_password.replace(/\s/g, '')}`);
+
+      const res = await fetch(`${cleanUrl}/wp-json/wp/v2/users/me`, {
+        headers: { Authorization: `Basic ${credentials}` },
+      });
+
+      if (!res.ok) {
+        throw new Error('Connection failed. Check your credentials.');
+      }
+
+      toast.success('Connection successful!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Connection failed');
+    } finally {
+      setTestingWp(false);
+    }
+  }
+
+  async function handleSaveWpConnection() {
+    if (!brandId) return;
+    setSavingWp(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('brand_settings')
+        .update({
+          wp_site_url: wpForm.site_url.replace(/\/+$/, ''),
+          wp_username: wpForm.username,
+          wp_app_password: wpForm.app_password,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('brand_id', brandId);
+
+      if (error) throw error;
+
+      setWpConfigured(true);
+      setShowWpModal(false);
+      toast.success('WordPress connection saved!');
+    } catch {
+      toast.error('Failed to save WordPress connection');
+    } finally {
+      setSavingWp(false);
     }
   }
 
@@ -286,16 +374,57 @@ export default function ReviewPage() {
                   onChange={(tags) => autoSave({ tags })}
                 />
               </div>
+            </div>
+
+            {/* Image Prompts */}
+            <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+              <h3 className="font-display text-lg font-semibold text-text">Image Prompts</h3>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-text">AI Image Prompt</label>
+                  <label className="text-sm font-medium text-text flex items-center gap-1.5">
+                    <Image className="w-3.5 h-3.5 text-accent" />
+                    Blog featured image
+                  </label>
                   <CopyButton value={content.image_prompt} />
                 </div>
                 <Textarea
                   value={content.image_prompt}
                   onChange={(e) => autoSave({ image_prompt: e.target.value })}
-                  className="min-h-[80px]"
+                  className="min-h-[80px] text-sm"
+                  placeholder="AI image prompt for the blog featured image..."
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-text flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-red-500" />
+                    Pinterest
+                  </label>
+                  <CopyButton value={content.image_prompt_pinterest} />
+                </div>
+                <Textarea
+                  value={content.image_prompt_pinterest}
+                  onChange={(e) => autoSave({ image_prompt_pinterest: e.target.value })}
+                  className="min-h-[80px] text-sm"
+                  placeholder="AI image prompt optimised for Pinterest (portrait 2:3)..."
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-text flex items-center gap-1.5">
+                    <Share2 className="w-3.5 h-3.5 text-purple-500" />
+                    Instagram / TikTok
+                  </label>
+                  <CopyButton value={content.image_prompt_social} />
+                </div>
+                <Textarea
+                  value={content.image_prompt_social}
+                  onChange={(e) => autoSave({ image_prompt_social: e.target.value })}
+                  className="min-h-[80px] text-sm"
+                  placeholder="AI image prompt for Instagram/TikTok (square or 4:5)..."
                 />
               </div>
             </div>
@@ -325,21 +454,110 @@ export default function ReviewPage() {
             <Archive className="w-4 h-4" />
             {archiving ? 'Archiving...' : 'Archive Article'}
           </Button>
-          <Button onClick={handlePublish} disabled={publishing}>
-            {publishing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Publish to WordPress + Archive
-              </>
-            )}
-          </Button>
+          {wpConfigured ? (
+            <Button onClick={handlePublish} disabled={publishing}>
+              {publishing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Publish to WordPress + Archive
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => setShowWpModal(true)}>
+              <Plug className="w-4 h-4" />
+              Connect to WordPress
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* WordPress Connection Modal */}
+      {showWpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold text-text">
+                Connect to WordPress
+              </h2>
+              <button
+                onClick={() => setShowWpModal(false)}
+                className="text-text-muted hover:text-text p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-text block mb-1">WordPress site URL</label>
+                <Input
+                  value={wpForm.site_url}
+                  onChange={(e) => setWpForm((f) => ({ ...f, site_url: e.target.value }))}
+                  placeholder="https://yourblog.com"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text block mb-1">WordPress username</label>
+                <Input
+                  value={wpForm.username}
+                  onChange={(e) => setWpForm((f) => ({ ...f, username: e.target.value }))}
+                  placeholder="admin"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text block mb-1">Application password</label>
+                <Input
+                  type="password"
+                  value={wpForm.app_password}
+                  onChange={(e) => setWpForm((f) => ({ ...f, app_password: e.target.value }))}
+                  placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                />
+                <p className="text-xs text-text-muted mt-1">
+                  Create one in WordPress &rarr; Users &rarr; Profile &rarr; Application Passwords
+                </p>
+              </div>
+
+              <div className="flex justify-between gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={handleTestWpConnection}
+                  disabled={testingWp}
+                >
+                  {testingWp ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    'Test Connection'
+                  )}
+                </Button>
+                <Button
+                  onClick={handleSaveWpConnection}
+                  disabled={savingWp || !wpForm.site_url || !wpForm.username || !wpForm.app_password}
+                >
+                  {savingWp ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Connection'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
