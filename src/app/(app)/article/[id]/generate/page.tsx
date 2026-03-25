@@ -61,22 +61,33 @@ export default function GeneratePage() {
       });
 
       if (!res.ok) {
-        throw new Error('Generation failed');
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || 'Generation failed');
       }
 
-      // Consume the stream
+      // Consume the stream and check for mid-stream errors
       const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let streamedText = '';
       if (reader) {
         while (true) {
-          const { done } = await reader.read();
+          const { done, value } = await reader.read();
           if (done) break;
+          if (value) streamedText += decoder.decode(value, { stream: true });
         }
+      }
+
+      // Check if stream contained an error marker
+      const errorMatch = streamedText.match(/<!--STREAM_ERROR:(.*?)-->/);
+      if (errorMatch) {
+        const streamError = JSON.parse(errorMatch[1]);
+        throw new Error(streamError.error);
       }
 
       // Redirect to review
       router.push(`/article/${articleId}/review`);
-    } catch {
-      setError('Something went wrong during generation.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong during generation.');
     }
   }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getAnthropicClient } from '@/lib/claude/client';
 import { buildRedoAnglesPrompt } from '@/lib/claude/prompts';
+import { handleAnthropicError } from '@/lib/claude/errors';
 
 export async function POST(request: Request) {
   try {
@@ -102,6 +103,15 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('Redo angles API error:', err);
+
+    const anthropicError = handleAnthropicError(err);
+    if (anthropicError) {
+      return NextResponse.json(
+        { error: anthropicError.error, code: anthropicError.code },
+        { status: anthropicError.status }
+      );
+    }
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -78,7 +78,10 @@ export default function AnglesPage() {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to regenerate angles');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to regenerate angles');
+      }
 
       const data = await res.json();
       setAngles(data.angles);
