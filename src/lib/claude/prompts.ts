@@ -171,6 +171,8 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
   "meta_description": "Conversational, first-person meta description. Lead with the answer or hook. Under 155 characters. Include the focus keyword naturally.",
   "category": "Best matching category from: ${brandSettings.content_categories?.join(', ') || 'General'}",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "image_prompt": "Detailed AI image generation prompt for the featured image, based on this style: ${brandSettings.image_prompt_style || 'Professional food photography'}"
+  "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
+  "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
+  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented — show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."
 }`;
 }
