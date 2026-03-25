@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getAnthropicClient } from '@/lib/claude/client';
 import { buildArticlePrompt } from '@/lib/claude/prompts';
+import { handleAnthropicError } from '@/lib/claude/errors';
 
 export async function POST(request: Request) {
   try {
@@ -118,6 +119,12 @@ export async function POST(request: Request) {
 
           controller.close();
         } catch (err) {
+          // Send error info as a JSON chunk so the client can detect it
+          const anthropicError = handleAnthropicError(err);
+          if (anthropicError) {
+            const errorChunk = `\n<!--STREAM_ERROR:${JSON.stringify({ error: anthropicError.error, code: anthropicError.code })}-->`;
+            controller.enqueue(new TextEncoder().encode(errorChunk));
+          }
           controller.error(err);
         }
       },
@@ -131,6 +138,15 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('Generate API error:', err);
+
+    const anthropicError = handleAnthropicError(err);
+    if (anthropicError) {
+      return new Response(
+        JSON.stringify({ error: anthropicError.error, code: anthropicError.code }),
+        { status: anthropicError.status, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

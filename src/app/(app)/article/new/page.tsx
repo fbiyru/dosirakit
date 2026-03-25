@@ -44,6 +44,9 @@ export default function NewArticlePage() {
 
       if (!res.ok) {
         const data = await res.json();
+        if (data.code === 'billing_error') {
+          throw new Error('Your Anthropic API credits have run out. Please top up at console.anthropic.com.');
+        }
         throw new Error(data.error || 'Failed to generate angles');
       }
 
