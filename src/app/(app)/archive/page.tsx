@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Send, Trash2, ExternalLink, Search } from 'lucide-react';
+import { Eye, Send, Trash2, ExternalLink, Search, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Article {
@@ -18,6 +18,7 @@ interface Article {
   wp_post_url: string | null;
   created_at: string;
   article_content: { title: string | null; word_count: number | null }[] | null;
+  article_angles: { selected: boolean }[] | null;
 }
 
 type StatusFilter = 'all' | 'draft' | 'archived' | 'published';
@@ -28,6 +29,7 @@ export default function ArchivePage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [wpConfigured, setWpConfigured] = useState(false);
 
   useEffect(() => { loadArticles(); }, []);
 
@@ -36,9 +38,20 @@ export default function ArchivePage() {
     const brandId = localStorage.getItem('activeBrandId');
     if (!brandId) return;
 
+    // Check if WordPress is configured
+    const { data: settings } = await supabase
+      .from('brand_settings')
+      .select('wp_site_url, wp_username, wp_app_password')
+      .eq('brand_id', brandId)
+      .single();
+
+    if (settings?.wp_site_url && settings?.wp_username && settings?.wp_app_password) {
+      setWpConfigured(true);
+    }
+
     const { data } = await supabase
       .from('articles')
-      .select('id, focus_keyword, status, wp_post_url, created_at, article_content(title, word_count)')
+      .select('id, focus_keyword, status, wp_post_url, created_at, article_content(title, word_count), article_angles(selected)')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false });
 
@@ -141,6 +154,11 @@ export default function ArchivePage() {
             {filtered.map((article) => {
               const title = article.article_content?.[0]?.title;
               const wordCount = article.article_content?.[0]?.word_count;
+              const hasContent = (article.article_content?.length ?? 0) > 0;
+              const angleSelected = article.article_angles?.some((a) => a.selected) ?? false;
+              const continueHref = !angleSelected
+                ? `/article/${article.id}/angles`
+                : `/article/${article.id}/story`;
 
               return (
                 <Card key={article.id} className="flex items-center gap-4 p-4">
@@ -171,25 +189,37 @@ export default function ArchivePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Link href={`/article/${article.id}/review`}>
-                      <Button variant="ghost" className="px-2 py-1.5">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    {article.status !== 'published' && (
-                      <Button
-                        variant="ghost"
-                        className="px-2 py-1.5"
-                        onClick={() => handlePublish(article.id)}
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
+                    {hasContent ? (
+                      <>
+                        <Link href={`/article/${article.id}/review`}>
+                          <Button variant="ghost" className="px-2 py-1.5" title="View">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        {article.status !== 'published' && wpConfigured && (
+                          <Button
+                            variant="ghost"
+                            className="px-2 py-1.5"
+                            onClick={() => handlePublish(article.id)}
+                            title="Push to WP"
+                          >
+                            <Send className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <Link href={continueHref}>
+                        <Button variant="ghost" className="px-2 py-1.5" title="Continue">
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </Link>
                     )}
                     <Button
                       variant="ghost"
                       className="px-2 py-1.5 text-destructive hover:text-destructive"
                       onClick={() => handleDelete(article.id)}
                       disabled={deleting === article.id}
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

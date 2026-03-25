@@ -20,12 +20,14 @@ function getGreeting() {
 export default function DashboardPage() {
   const [brandName, setBrandName] = useState('');
   const [stats, setStats] = useState({ total: 0, published: 0, archived: 0, thisMonth: 0 });
+  const [wpConfigured, setWpConfigured] = useState(false);
   const [articles, setArticles] = useState<Array<{
     id: string;
     focus_keyword: string;
     status: 'draft' | 'archived' | 'published';
     created_at: string;
     article_content: { title: string | null }[] | null;
+    article_angles: { selected: boolean }[] | null;
   }>>([]);
 
   useEffect(() => {
@@ -43,10 +45,21 @@ export default function DashboardPage() {
 
       if (brand) setBrandName(brand.name);
 
-      // Load articles
+      // Check if WordPress is configured
+      const { data: settings } = await supabase
+        .from('brand_settings')
+        .select('wp_site_url, wp_username, wp_app_password')
+        .eq('brand_id', brandId)
+        .single();
+
+      if (settings?.wp_site_url && settings?.wp_username && settings?.wp_app_password) {
+        setWpConfigured(true);
+      }
+
+      // Load articles with content and angle selection status
       const { data: allArticles } = await supabase
         .from('articles')
-        .select('id, focus_keyword, status, created_at, article_content(title)')
+        .select('id, focus_keyword, status, created_at, article_content(title), article_angles(selected)')
         .eq('brand_id', brandId)
         .order('created_at', { ascending: false });
 
@@ -102,7 +115,7 @@ export default function DashboardPage() {
           <h3 className="font-display text-lg font-semibold text-text mb-3">
             Recent Articles
           </h3>
-          <RecentArticles articles={articles} />
+          <RecentArticles articles={articles} wpConfigured={wpConfigured} />
         </div>
 
         {/* Quick links */}
