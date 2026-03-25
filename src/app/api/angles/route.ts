@@ -66,7 +66,6 @@ export async function POST(request: Request) {
       .insert({
         brand_id,
         focus_keyword,
-        secondary_keywords: secondary_keywords?.length ? secondary_keywords : null,
         user_notes: user_notes || null,
       })
       .select('id')
