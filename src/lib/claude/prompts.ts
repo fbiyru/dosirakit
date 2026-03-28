@@ -27,6 +27,7 @@ interface Article {
   story_provided: boolean;
   story_content: string | null;
   story_placement: string | null;
+  generate_image_prompts: boolean;
 }
 
 export function buildAnglesPrompt(
@@ -139,6 +140,11 @@ IMPORTANT: The personal story must feel seamlessly integrated — not dropped in
 `;
   }
 
+  const imagePromptFields = article.generate_image_prompts ? `,
+  "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
+  "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
+  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."` : '';
+
   return `You are a skilled food blogger writing for ${brandSettings.site_name || 'a food blog'}.
 
 BRAND VOICE & GUIDELINES:
@@ -148,7 +154,7 @@ BRAND VOICE & GUIDELINES:
 - Always include: ${brandSettings.things_to_always_include || 'None specified'}
 - Never include: ${brandSettings.things_to_never_include || 'None specified'}
 
-ANTI-AI WRITING RULES (always follow these):
+ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
 ${ANTI_AI_RULES}
 
 ARTICLE BRIEF:
@@ -160,6 +166,17 @@ ARTICLE BRIEF:
 ${article.secondary_keywords?.length ? `- Secondary keywords (include naturally where they fit, but do NOT force them — the focus keyword is still primary): ${article.secondary_keywords.join(', ')}` : ''}
 ${article.user_notes ? `- Author's additional notes: ${article.user_notes}` : ''}
 ${storySection}
+
+MANDATORY SELF-CHECK — complete every step before writing your final JSON response:
+1. Scan your entire article for em dashes. Replace EVERY em dash with a comma, period, or parentheses. Zero em dashes allowed.
+2. Scan for EVERY banned word and phrase from the ANTI-AI WRITING RULES above. If any appear, rewrite those sentences completely using different words.
+3. Verify no paragraph opens with Moreover, Furthermore, Additionally, However, Despite, Notably, or When it comes to.
+4. Check for three-adjective patterns before any noun. Cut to 1-2 adjectives maximum.
+5. Remove any trailing present-participle clause that claims significance (e.g. "making it a popular choice", "cementing its place", "reflecting the growing trend").
+6. Verify the conclusion does NOT summarise what you just wrote. End with a specific, personal, forward-looking thought.
+7. Check that you have NOT used "Not only X, but also Y" or "It's not just about X, it's Y" anywhere.
+8. Verify all headings use sentence case, not Title Case Every Word.
+
 WRITE the full article. Then provide all metadata.
 
 Respond ONLY with a valid JSON object. No preamble, no markdown fences:
@@ -170,9 +187,6 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
   "meta_title": "SEO title, max 60 characters, include focus keyword",
   "meta_description": "Conversational, first-person meta description. Lead with the answer or hook. Under 155 characters. Include the focus keyword naturally.",
   "category": "Best matching category from: ${brandSettings.content_categories?.join(', ') || 'General'}",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
-  "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
-  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented — show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]${imagePromptFields}
 }`;
 }

@@ -6,7 +6,7 @@ import { handleAnthropicError } from '@/lib/claude/errors';
 
 export async function POST(request: Request) {
   try {
-    const { focus_keyword, secondary_keywords, user_notes, brand_id } = await request.json();
+    const { focus_keyword, secondary_keywords, user_notes, brand_id, generate_image_prompts } = await request.json();
 
     if (!focus_keyword || !brand_id) {
       return NextResponse.json(
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
         brand_id,
         focus_keyword,
         user_notes: user_notes || null,
+        generate_image_prompts: generate_image_prompts ?? true,
       })
       .select('id')
       .single();

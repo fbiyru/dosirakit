@@ -376,7 +376,8 @@ export default function ReviewPage() {
               </div>
             </div>
 
-            {/* Image Prompts */}
+            {/* Image Prompts — only show if at least one prompt exists */}
+            {(content.image_prompt || content.image_prompt_pinterest || content.image_prompt_social) && (
             <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
               <h3 className="font-display text-lg font-semibold text-text">Image Prompts</h3>
 
@@ -428,6 +429,7 @@ export default function ReviewPage() {
                 />
               </div>
             </div>
+            )}
 
             {/* WP link */}
             {wpUrl && (

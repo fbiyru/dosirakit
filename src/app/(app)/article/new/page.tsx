@@ -13,6 +13,7 @@ export default function NewArticlePage() {
   const [keyword, setKeyword] = useState('');
   const [secondaryKeywords, setSecondaryKeywords] = useState('');
   const [notes, setNotes] = useState('');
+  const [generateImagePrompts, setGenerateImagePrompts] = useState(true);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -39,6 +40,7 @@ export default function NewArticlePage() {
             .filter(Boolean),
           user_notes: notes.trim() || null,
           brand_id: brandId,
+          generate_image_prompts: generateImagePrompts,
         }),
       });
 
@@ -91,6 +93,18 @@ export default function NewArticlePage() {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. I want this to be beginner-friendly. Target audience is non-Koreans curious about Korean food."
             />
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={generateImagePrompts}
+                onChange={(e) => setGenerateImagePrompts(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+              />
+              <span className="text-sm text-text">
+                Generate AI image prompts (blog, Pinterest, Instagram/TikTok)
+              </span>
+            </label>
 
             <Button
               type="submit"
