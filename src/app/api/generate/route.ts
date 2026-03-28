@@ -2,6 +2,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getAnthropicClient } from '@/lib/claude/client';
 import { buildArticlePrompt } from '@/lib/claude/prompts';
 import { handleAnthropicError } from '@/lib/claude/errors';
+import { scanForViolations, buildFixPrompt } from '@/lib/claude/validate-article';
 
 export async function POST(request: Request) {
   try {
@@ -98,6 +99,33 @@ export async function POST(request: Request) {
           }
 
           if (parsed) {
+            // Post-generation validation: scan for AI writing markers
+            if (parsed.body) {
+              const { violations, count } = scanForViolations(parsed.body);
+              if (count > 0) {
+                console.log(`Found ${count} AI writing violation(s). Running fix pass...`);
+                try {
+                  const fixPrompt = buildFixPrompt(parsed.body, violations);
+                  const fixResponse = await anthropic.messages.create({
+                    model: 'claude-sonnet-4-5-20250929',
+                    max_tokens: 4096,
+                    messages: [{ role: 'user', content: fixPrompt }],
+                  });
+
+                  const fixedBody = fixResponse.content[0].type === 'text'
+                    ? fixResponse.content[0].text
+                    : null;
+
+                  if (fixedBody && fixedBody.length > 100) {
+                    parsed.body = fixedBody;
+                  }
+                } catch (fixErr) {
+                  // If the fix call fails, proceed with the original body
+                  console.error('Fix pass failed, using original:', fixErr);
+                }
+              }
+            }
+
             const wordCount = parsed.body
               ? parsed.body.split(/\s+/).filter(Boolean).length
               : 0;
@@ -112,7 +140,7 @@ export async function POST(request: Request) {
               meta_description: parsed.meta_description,
               category: parsed.category,
               tags: parsed.tags,
-              image_prompt: parsed.image_prompt,
+              image_prompt: parsed.image_prompt || null,
               image_prompt_pinterest: parsed.image_prompt_pinterest || null,
               image_prompt_social: parsed.image_prompt_social || null,
               word_count: wordCount,
