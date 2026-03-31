@@ -63,7 +63,17 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences.`;
     try {
       updated_settings = JSON.parse(text.trim());
     } catch {
-      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+      // Try to extract JSON from markdown fences or surrounding text
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          updated_settings = JSON.parse(jsonMatch[0]);
+        } catch {
+          return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ updated_settings });
