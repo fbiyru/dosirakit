@@ -912,3 +912,221 @@ Build in this sequence:
 - Default brand name to pre-fill in onboarding Step 1: "Mama Kim Cooks"
 - Story fields on the story brief page are all optional. If the user skips or leaves all fields blank, set `story_provided = false` and proceed to generation without story context in the prompt.
 - The `BrandSwitcher` in the sidebar should only appear if the user has 2 or more brands. For a single brand, just show the brand name as static text.
+
+# Dosirakit — SEO Pipeline Expansion
+
+> Append this to the existing CLAUDE.md. Do not replace any existing content.
+> Read the full existing CLAUDE.md first, then read this section before writing any code.
+
+---
+
+## New feature scope
+
+We are expanding Dosirakit from a single-article generator into a full SEO content pipeline. Four new stages sit upstream of the existing write → edit → publish flow. The existing flow is unchanged — we are adding to it, not replacing it.
+
+**Full pipeline (new stages in bold):**
+**Stage 0 → Stage 1 → Stage 2 → Stage 3** → Article generation → Review/edit → WordPress publish
+
+---
+
+## Stage 0 — Site profile setup
+
+**Trigger:** When a brand is first created, or when the user clicks "Update site profile" on an existing brand.
+
+**What it does:**
+1. Calls Firecrawl REST API to map all URLs on the brand's domain (limit 500)
+2. Scrapes the homepage, about page, and up to 5 recent blog posts for site summary content
+3. Prompts the user to enter 2–3 competitor URLs
+4. Stores everything in Supabase
+
+**Firecrawl endpoints to use:**
+- Map: `POST https://api.firecrawl.dev/v1/map` — body: `{ url, limit: 500 }`
+- Scrape: `POST https://api.firecrawl.dev/v1/scrape` — body: `{ url, formats: ["markdown"], onlyMainContent: true }`
+
+**Why this matters:**
+- Prevents suggesting topics already covered on the site
+- Enables internal link suggestions during brief building
+- Gives competitor context for keyword gap analysis
+
+**Supabase tables to create:**
+
+```sql
+create table site_profiles (
+  id uuid primary key default gen_random_uuid(),
+  brand_id uuid references brands(id) on delete cascade,
+  site_url text not null,
+  url_map jsonb,
+  site_summary text,
+  domain_metrics jsonb,
+  last_scraped_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+create table competitors (
+  id uuid primary key default gen_random_uuid(),
+  brand_id uuid references brands(id) on delete cascade,
+  name text,
+  url text not null,
+  created_at timestamptz default now()
+);
+```
+
+---
+
+## Stage 1 — Brand voice (updated)
+
+**Keep** the existing manual brand voice process exactly as it is.
+
+**Add** two new options on the brand voice page:
+
+**Option A — Auto-extract (for new brands):**
+1. Uses the scraped content from Stage 0 (homepage, about, blog posts)
+2. Sends content to Claude API with a voice extraction prompt
+3. Claude returns a structured voice profile: tone, vocabulary patterns, rhythm, POV, do's and don'ts
+4. Saves to the existing brand voice field in Supabase
+
+**Option B — Re-extract (for existing brands):**
+Same as Option A but overwrites the existing brand voice. Show a confirmation before overwriting.
+
+**Claude API prompt for voice extraction:**
+```
+Analyse the following content from [brand name]'s website and extract a detailed brand voice profile. Return a structured profile covering: tone and personality, vocabulary preferences (words they use / avoid), sentence rhythm and length patterns, point of view, and 5 specific writing do's and 5 don'ts based on the actual content. Be specific — cite patterns you observe, not generic advice.
+
+Content:
+[scraped content]
+```
+
+---
+
+## Stage 2 — Find opportunities
+
+**Trigger:** "Find opportunities" button on the main dashboard.
+
+**What it does:**
+1. Calls DataForSEO REST API using the brand's domain and competitor URLs
+2. Returns keyword opportunities in three categories:
+   - Striking distance: keywords where the domain ranks position 6–20
+   - Competitor gaps: keywords competitors rank for that the domain doesn't
+   - Unowned topics: high-intent keywords with no clear ranking winner
+3. Each opportunity shows: keyword, monthly volume, keyword difficulty (KD), estimated traffic potential
+4. User reviews the list and selects which opportunities to brief
+5. Selected opportunities are saved to Supabase with status `new`
+
+**DataForSEO endpoints to use:**
+- Domain organic keywords: `POST https://api.dataforseo.com/v3/dataforseo_labs/google/ranked_keywords/live`
+- Competitor keywords: `POST https://api.dataforseo.com/v3/dataforseo_labs/google/domain_intersection/live`
+- Auth: HTTP Basic — `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` from env
+
+**Supabase table:**
+
+```sql
+create table opportunities (
+  id uuid primary key default gen_random_uuid(),
+  brand_id uuid references brands(id) on delete cascade,
+  keyword text not null,
+  volume integer,
+  kd integer,
+  traffic_potential integer,
+  opportunity_type text check (opportunity_type in ('striking_distance', 'competitor_gap', 'unowned')),
+  status text default 'new' check (status in ('new', 'briefed', 'written', 'published')),
+  wordpress_url text,
+  created_at timestamptz default now()
+);
+```
+
+---
+
+## Stage 3 — Build brief
+
+**Trigger:** User selects one or more opportunities and clicks "Build brief".
+
+**What it does:**
+Claude API generates a full content brief for each selected opportunity using:
+- The target keyword and opportunity data from Stage 2
+- The brand's site map and existing content (from Stage 0) for internal link suggestions
+- The brand's competitor list (from Stage 0) for gap analysis
+- The brand's voice profile
+
+**Brief contents Claude must produce:**
+- Primary keyword and 4–6 long-tail variants
+- People Also Ask questions relevant to the keyword (3–5)
+- Recommended H1, H2 structure with approximate word allocation per section
+- Target word count range
+- Semantic keywords to include naturally
+- Internal linking suggestions (based on existing site URLs from Stage 0)
+- Writing notes tied to brand voice (tone reminders, angles to take, angles to avoid)
+
+**Storage:**
+
+```sql
+create table briefs (
+  id uuid primary key default gen_random_uuid(),
+  opportunity_id uuid references opportunities(id) on delete cascade,
+  brand_id uuid references brands(id) on delete cascade,
+  brief_content jsonb not null,
+  created_at timestamptz default now()
+);
+```
+
+After saving, update `opportunities.status` to `briefed`.
+
+**UI:** Display the brief in a readable, structured view. User can review before proceeding to write. Add an "Edit brief" option so the user can adjust any section before writing.
+
+---
+
+## Stage 4 — Write (extends existing flow)
+
+**What changes:**
+- Article generation now receives the full brief as primary context, in addition to brand voice
+- The brief's keyword targets, heading structure, and writing notes are injected into the Claude generation prompt
+- The existing personal story step is retained exactly as it is — it still appears between angle selection and generation
+
+**What stays the same:**
+- Article generation UI
+- Review and edit screen
+- Meta fields (title, description, slug, category)
+- WordPress publish flow
+- All existing error handling
+
+**After publish:**
+Update `opportunities.status` to `published` and save the WordPress post URL to `opportunities.wordpress_url`.
+
+---
+
+## Environment variables
+
+The following keys are already in `.env.local`. Reference them in code exactly as named — do not hardcode values.
+
+```
+FIRECRAWL_API_KEY          # Firecrawl REST API key
+DATAFORSEO_LOGIN           # DataForSEO API login email
+DATAFORSEO_PASSWORD        # DataForSEO API password (different from account password)
+```
+
+Add to `.env.example` with empty values:
+```
+FIRECRAWL_API_KEY=
+DATAFORSEO_LOGIN=
+DATAFORSEO_PASSWORD=
+```
+
+---
+
+## Implementation order
+
+Build in this sequence. Complete and test each stage before moving to the next. Ask for approval before starting each new stage.
+
+1. Supabase migrations — create all four new tables (`site_profiles`, `competitors`, `opportunities`, `briefs`)
+2. Stage 0 — Firecrawl integration and site profile UI
+3. Stage 1 — Brand voice auto-extract option (uses Stage 0 scrape data)
+4. Stage 2 — DataForSEO integration and opportunities UI
+5. Stage 3 — Brief building with Claude API
+6. Stage 4 — Wire brief context into existing article generation prompt
+
+Do not start stage 2 without stage 0 complete. The opportunities feature depends on having a site profile and competitor list already stored.
+
+---
+
+## Tone and code standards
+
+Follow all existing code standards from the main CLAUDE.md. No new dependencies without flagging first. All new API calls go through Next.js API routes — never call DataForSEO or Firecrawl directly from the client.
