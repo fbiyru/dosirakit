@@ -190,3 +190,29 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]${imagePromptFields}
 }`;
 }
+
+/**
+ * Build the prompt used by /api/brand-voice/extract.
+ * Given scraped site content, Claude returns a structured voice profile
+ * covering tone, vocabulary, rhythm, POV, and 5 do's / 5 don'ts.
+ */
+export function buildVoiceExtractionPrompt(
+  brandName: string,
+  siteContent: string
+): string {
+  return `Analyse the following content from ${brandName}'s website and extract a detailed brand voice profile. Return a structured profile covering: tone and personality, vocabulary preferences (words they use / avoid), sentence rhythm and length patterns, point of view, and 5 specific writing do's and 5 don'ts based on the actual content. Be specific — cite patterns you observe, not generic advice.
+
+Respond ONLY with a valid JSON object. No preamble, no markdown fences. Schema:
+{
+  "tone_and_personality": "2-4 sentences describing the overall tone, warmth, formality, and personality of the writing",
+  "vocabulary_use": ["signature word or phrase 1", "signature word or phrase 2", "signature word or phrase 3", "signature word or phrase 4", "signature word or phrase 5"],
+  "vocabulary_avoid": ["word or phrase clearly not in this voice 1", "word or phrase 2", "word or phrase 3", "word or phrase 4", "word or phrase 5"],
+  "sentence_rhythm": "1-3 sentences on typical sentence length, rhythm, and variation observed",
+  "point_of_view": "First person singular / first person plural / second person / third person — whichever you observe. Explain briefly.",
+  "dos": ["specific do 1", "specific do 2", "specific do 3", "specific do 4", "specific do 5"],
+  "donts": ["specific don't 1", "specific don't 2", "specific don't 3", "specific don't 4", "specific don't 5"]
+}
+
+Content:
+${siteContent}`;
+}
