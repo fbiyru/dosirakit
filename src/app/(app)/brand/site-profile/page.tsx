@@ -186,19 +186,26 @@ export default function SiteProfilePage() {
     }
   }
 
-  async function applyVoice() {
+  async function applyVoice(mode: 'replace' | 'append') {
     if (!brandId || !previewMarkdown) return;
     setApplying(true);
     try {
+      const merged =
+        mode === 'append' && currentVoice
+          ? `${currentVoice.trim()}\n\n---\n\n${previewMarkdown}`
+          : previewMarkdown;
+
       const supabase = createClient();
       const { error } = await supabase
         .from('brand_settings')
-        .update({ tone_and_voice: previewMarkdown })
+        .update({ tone_and_voice: merged })
         .eq('brand_id', brandId);
       if (error) throw error;
-      setCurrentVoice(previewMarkdown);
+      setCurrentVoice(merged);
       setPreviewMarkdown(null);
-      toast.success('Brand voice updated.');
+      toast.success(
+        mode === 'append' ? 'Appended to brand voice.' : 'Brand voice replaced.'
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save';
       toast.error(msg);
@@ -451,7 +458,7 @@ export default function SiteProfilePage() {
                 </h3>
                 <p className="text-sm text-text-muted mt-1">
                   {currentVoice
-                    ? 'This will replace your existing brand voice.'
+                    ? 'Choose how to apply this to your existing brand voice.'
                     : 'Review the extracted profile and apply it to your brand.'}
                 </p>
               </div>
@@ -468,7 +475,7 @@ export default function SiteProfilePage() {
                 {previewMarkdown}
               </div>
             </div>
-            <div className="p-6 border-t border-border flex justify-end gap-3">
+            <div className="p-6 border-t border-border flex flex-wrap justify-end gap-3">
               <Button
                 variant="secondary"
                 onClick={() => setPreviewMarkdown(null)}
@@ -476,9 +483,26 @@ export default function SiteProfilePage() {
               >
                 Cancel
               </Button>
+              {currentVoice && (
+                <Button
+                  variant="secondary"
+                  onClick={() => applyVoice('append')}
+                  disabled={applying}
+                  title="Keep existing voice and add the extracted one below it"
+                >
+                  {applying ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Add to existing voice
+                    </>
+                  )}
+                </Button>
+              )}
               <Button
                 variant="primary"
-                onClick={applyVoice}
+                onClick={() => applyVoice('replace')}
                 disabled={applying}
               >
                 {applying ? (
