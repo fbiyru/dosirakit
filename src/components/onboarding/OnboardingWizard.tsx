@@ -155,8 +155,8 @@ export function OnboardingWizard({ brandId, isNewBrand }: OnboardingWizardProps)
         localStorage.setItem('activeBrandId', currentBrandId!);
       }
 
-      toast.success('Brand setup complete!');
-      router.push('/dashboard');
+      toast.success('Brand setup complete! Setting up your site profile…');
+      router.push('/brand/site-profile');
       router.refresh();
     } catch (err) {
       toast.error('Failed to save. Please try again.');

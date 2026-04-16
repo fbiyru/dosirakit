@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, PenLine, Archive, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, PenLine, Archive, Settings, LogOut, Globe } from 'lucide-react';
 import { BrandSwitcher } from './BrandSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/article/new', label: 'New Article', icon: PenLine },
   { href: '/archive', label: 'Archive', icon: Archive },
+  { href: '/brand/site-profile', label: 'Site profile', icon: Globe },
   { href: '/settings', label: 'Brand Settings', icon: Settings },
 ];
 
