@@ -7,7 +7,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Globe, RefreshCw, Trash2, Plus, Link2 } from 'lucide-react';
+import { Loader2, Globe, RefreshCw, Trash2, Plus, Link2, Mic, Sparkles, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface SiteProfile {
@@ -37,6 +37,10 @@ export default function SiteProfilePage() {
   const [newCompetitorUrl, setNewCompetitorUrl] = useState('');
   const [newCompetitorName, setNewCompetitorName] = useState('');
   const [addingCompetitor, setAddingCompetitor] = useState(false);
+  const [currentVoice, setCurrentVoice] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [previewMarkdown, setPreviewMarkdown] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -58,10 +62,11 @@ export default function SiteProfilePage() {
 
       const { data: settings } = await supabase
         .from('brand_settings')
-        .select('site_url')
+        .select('site_url, tone_and_voice')
         .eq('brand_id', id)
         .single();
       if (settings?.site_url) setBrandSiteUrl(settings.site_url);
+      if (settings?.tone_and_voice) setCurrentVoice(settings.tone_and_voice);
 
       await refresh(id);
       setLoading(false);
@@ -151,6 +156,54 @@ export default function SiteProfilePage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to remove';
       toast.error(msg);
+    }
+  }
+
+  async function extractVoice() {
+    if (!brandId) return;
+    if (!profile?.site_summary) {
+      toast.error('Run the site profile scrape first.');
+      return;
+    }
+    setExtracting(true);
+    try {
+      const res = await fetch('/api/brand-voice/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand_id: brandId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Extraction failed');
+      }
+      const data = await res.json();
+      setPreviewMarkdown(data.markdown);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Extraction failed';
+      toast.error(msg);
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function applyVoice() {
+    if (!brandId || !previewMarkdown) return;
+    setApplying(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('brand_settings')
+        .update({ tone_and_voice: previewMarkdown })
+        .eq('brand_id', brandId);
+      if (error) throw error;
+      setCurrentVoice(previewMarkdown);
+      setPreviewMarkdown(null);
+      toast.success('Brand voice updated.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save';
+      toast.error(msg);
+    } finally {
+      setApplying(false);
     }
   }
 
@@ -248,6 +301,59 @@ export default function SiteProfilePage() {
           )}
         </Card>
 
+        {/* Brand voice card */}
+        <Card>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent-light flex items-center justify-center">
+                <Mic className="w-5 h-5 text-accent-dark" />
+              </div>
+              <div>
+                <h2 className="font-display text-xl font-semibold text-text">
+                  Brand voice
+                </h2>
+                <p className="text-sm text-text-muted">
+                  Extract your voice profile from the scraped site content.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              onClick={extractVoice}
+              disabled={extracting || !profile?.site_summary}
+            >
+              {extracting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Extracting…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  {currentVoice ? 'Re-extract voice' : 'Extract voice'}
+                </>
+              )}
+            </Button>
+          </div>
+
+          {currentVoice ? (
+            <div>
+              <p className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2">
+                Current brand voice
+              </p>
+              <div className="bg-surface-alt rounded-xl p-4 text-sm text-text whitespace-pre-wrap max-h-64 overflow-y-auto">
+                {currentVoice}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted bg-surface-alt rounded-xl p-4">
+              {profile?.site_summary
+                ? 'No voice profile yet. Click Extract voice to generate one from your scraped site content.'
+                : 'Run the site profile scrape first, then come back to extract your brand voice.'}
+            </p>
+          )}
+        </Card>
+
         {/* Competitors card */}
         <Card>
           <div className="mb-4">
@@ -327,6 +433,70 @@ export default function SiteProfilePage() {
           )}
         </Card>
       </div>
+
+      {/* Voice preview modal */}
+      {previewMarkdown && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+          onClick={() => !applying && setPreviewMarkdown(null)}
+        >
+          <div
+            className="bg-surface rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
+              <div>
+                <h3 className="font-display text-xl font-semibold text-text">
+                  Extracted brand voice
+                </h3>
+                <p className="text-sm text-text-muted mt-1">
+                  {currentVoice
+                    ? 'This will replace your existing brand voice.'
+                    : 'Review the extracted profile and apply it to your brand.'}
+                </p>
+              </div>
+              <button
+                onClick={() => !applying && setPreviewMarkdown(null)}
+                className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-alt transition-colors"
+                disabled={applying}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="bg-surface-alt rounded-xl p-4 text-sm text-text whitespace-pre-wrap">
+                {previewMarkdown}
+              </div>
+            </div>
+            <div className="p-6 border-t border-border flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setPreviewMarkdown(null)}
+                disabled={applying}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={applyVoice}
+                disabled={applying}
+              >
+                {applying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Applying…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    {currentVoice ? 'Replace voice' : 'Apply voice'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
