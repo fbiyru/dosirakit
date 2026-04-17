@@ -16,7 +16,9 @@ import {
   X as XIcon,
   Link2,
   Save,
+  PenLine,
 } from 'lucide-react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 interface OutlineSection {
@@ -400,7 +402,7 @@ export default function BriefPage() {
         </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
           <Button
             variant="secondary"
             onClick={() => router.push('/opportunities')}
@@ -408,18 +410,24 @@ export default function BriefPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to opportunities
           </Button>
-          <Button
-            onClick={() => {
-              if (saveTimeout.current) {
-                clearTimeout(saveTimeout.current);
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (saveTimeout.current) clearTimeout(saveTimeout.current);
                 saveBrief(bc);
-              }
-              toast.success('Brief is ready. Create an article from it in the next stage.');
-            }}
-          >
-            <Save className="w-4 h-4" />
-            Finalise brief
-          </Button>
+              }}
+            >
+              <Save className="w-4 h-4" />
+              Save changes
+            </Button>
+            <Link href={`/article/new?from_brief=${opportunityId}`}>
+              <Button>
+                <PenLine className="w-4 h-4" />
+                Write from brief
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </AppShell>

@@ -1,21 +1,51 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function NewArticlePage() {
+interface BriefBanner {
+  keyword: string;
+  opportunityId: string;
+}
+
+function NewArticleContent() {
+  const searchParams = useSearchParams();
+  const fromBriefId = searchParams.get('from_brief');
+
   const [keyword, setKeyword] = useState('');
   const [secondaryKeywords, setSecondaryKeywords] = useState('');
   const [notes, setNotes] = useState('');
   const [generateImagePrompts, setGenerateImagePrompts] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [briefBanner, setBriefBanner] = useState<BriefBanner | null>(null);
   const router = useRouter();
+
+  // Pre-fill keyword from brief opportunity
+  useEffect(() => {
+    if (!fromBriefId) return;
+
+    async function loadOpportunity() {
+      const res = await fetch(`/api/briefs?opportunity_id=${fromBriefId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.brief) return;
+
+      const primaryKeyword =
+        data.brief.brief_content?.primary_keyword as string | undefined;
+      if (primaryKeyword) {
+        setKeyword(primaryKeyword);
+        setBriefBanner({ keyword: primaryKeyword, opportunityId: fromBriefId! });
+      }
+    }
+
+    loadOpportunity();
+  }, [fromBriefId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,13 +71,16 @@ export default function NewArticlePage() {
           user_notes: notes.trim() || null,
           brand_id: brandId,
           generate_image_prompts: generateImagePrompts,
+          opportunity_id: fromBriefId || null,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
         if (data.code === 'billing_error') {
-          throw new Error('Your Anthropic API credits have run out. Please top up at console.anthropic.com.');
+          throw new Error(
+            'Your Anthropic API credits have run out. Please top up at console.anthropic.com.'
+          );
         }
         throw new Error(data.error || 'Failed to generate angles');
       }
@@ -67,6 +100,21 @@ export default function NewArticlePage() {
           <h1 className="font-display text-3xl font-bold text-text text-center mb-8">
             What are we writing about today?
           </h1>
+
+          {briefBanner && (
+            <div className="mb-6 flex items-start gap-3 px-4 py-3 rounded-xl bg-accent-light border border-accent/20">
+              <FileText className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-accent-dark">
+                  Writing from brief
+                </p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  Your content brief for &ldquo;{briefBanner.keyword}&rdquo; will be
+                  injected into the article generation prompt.
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
@@ -124,5 +172,21 @@ export default function NewArticlePage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+export default function NewArticlePage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        </AppShell>
+      }
+    >
+      <NewArticleContent />
+    </Suspense>
   );
 }

@@ -117,7 +117,8 @@ Respond ONLY with a valid JSON array. No preamble, no markdown fences:
 export function buildArticlePrompt(
   brandSettings: BrandSettings,
   angle: Angle,
-  article: Article
+  article: Article,
+  brief?: BriefContext
 ): string {
   let storySection = '';
   if (article.story_provided && article.story_content) {
@@ -165,7 +166,21 @@ ARTICLE BRIEF:
 - Target word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
 ${article.secondary_keywords?.length ? `- Secondary keywords (include naturally where they fit, but do NOT force them — the focus keyword is still primary): ${article.secondary_keywords.join(', ')}` : ''}
 ${article.user_notes ? `- Author's additional notes: ${article.user_notes}` : ''}
-${storySection}
+${brief ? `
+SEO BRIEF — use this to enrich your article. Follow the structure and weave in these targets naturally:
+- Recommended title (adapt as needed to match your chosen angle): "${brief.recommended_title}"
+- Long-tail variants to include naturally: ${brief.long_tail_variants.join(', ')}
+- Semantic terms to weave throughout: ${brief.semantic_keywords.join(', ')}
+- People Also Ask (consider addressing at least 2–3 of these within the article):
+${brief.people_also_ask.map((q) => `  * ${q}`).join('\n')}
+- Suggested heading structure (adapt to your angle — this is guidance, not a rigid script):
+${brief.outline.map((s) => {
+  const subs = s.subheadings?.length ? '\n' + s.subheadings.map((h) => `      H3: ${h}`).join('\n') : '';
+  return `  ## ${s.heading} (~${s.word_allocation} words)\n     Notes: ${s.notes}${subs}`;
+}).join('\n')}
+${brief.internal_links.length > 0 ? `- Internal links to include where relevant (use exact anchor text where natural):\n${brief.internal_links.map((l) => `  * "${l.anchor_suggestion}" → ${l.url}`).join('\n')}` : ''}
+- Writing guidance: ${brief.writing_notes}
+` : ''}${storySection}
 
 MANDATORY SELF-CHECK — complete every step before writing your final JSON response:
 1. Scan your entire article for em dashes. Replace EVERY em dash with a comma, period, or parentheses. Zero em dashes allowed.
@@ -189,6 +204,21 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
   "category": "Best matching category from: ${brandSettings.content_categories?.join(', ') || 'General'}",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]${imagePromptFields}
 }`;
+}
+
+export interface BriefContext {
+  recommended_title: string;
+  long_tail_variants: string[];
+  people_also_ask: string[];
+  outline: Array<{
+    heading: string;
+    subheadings?: string[];
+    notes: string;
+    word_allocation: number;
+  }>;
+  semantic_keywords: string[];
+  internal_links: Array<{ url: string; anchor_suggestion: string }>;
+  writing_notes: string;
 }
 
 interface BriefInput {
