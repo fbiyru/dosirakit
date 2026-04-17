@@ -12,19 +12,32 @@ function getAuth(): string {
 }
 
 async function apiPost(path: string, body: unknown[]): Promise<unknown> {
+  const auth = getAuth();
+  console.log(`[DataForSEO] POST ${path}`);
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: {
-      Authorization: getAuth(),
+      Authorization: auth,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    console.error(`[DataForSEO] ${res.status} response:`, text.slice(0, 500));
     throw new DataForSEOError(`DataForSEO ${res.status}: ${text}`, res.status);
   }
-  return res.json();
+  const json = await res.json();
+  const taskStatus = (json as { tasks?: Array<{ status_code?: number; status_message?: string }> })
+    ?.tasks?.[0];
+  if (taskStatus && taskStatus.status_code !== 20000) {
+    console.error(`[DataForSEO] Task error:`, taskStatus.status_code, taskStatus.status_message);
+    throw new DataForSEOError(
+      `DataForSEO task error ${taskStatus.status_code}: ${taskStatus.status_message}`,
+      taskStatus.status_code
+    );
+  }
+  return json;
 }
 
 export function extractDomain(url: string): string {

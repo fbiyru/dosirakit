@@ -23,6 +23,7 @@ interface DiscoveryResult {
   competitor_gaps: KeywordOpportunity[];
   unowned: KeywordOpportunity[];
   competitors_checked: number;
+  warnings?: string[];
 }
 
 interface SavedOpportunity {
@@ -279,6 +280,19 @@ export default function OpportunitiesPage() {
             <p className="text-text-muted text-sm">
               Querying DataForSEO — this takes 10–30 seconds…
             </p>
+          </Card>
+        )}
+
+        {results && !discovering && results.warnings && results.warnings.length > 0 && (
+          <Card className="bg-amber-50 border-amber-200 space-y-1">
+            <p className="text-sm font-medium text-amber-800">
+              Some data sources returned errors:
+            </p>
+            {results.warnings.map((w, i) => (
+              <p key={i} className="text-xs text-amber-700 font-mono break-all">
+                {w}
+              </p>
+            ))}
           </Card>
         )}
 
