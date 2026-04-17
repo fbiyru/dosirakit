@@ -76,13 +76,27 @@ export async function POST(request: Request) {
     const siteUrl = settings.site_url;
     const competitorUrls = (competitors ?? []).map((c) => c.url);
 
-    // Run all DataForSEO calls in parallel
+    // Run all DataForSEO calls in parallel, capturing errors
+    const warnings: string[] = [];
+
+    const catchWith = <T,>(
+      label: string,
+      promise: Promise<T>,
+      fallback: T
+    ): Promise<T> =>
+      promise.catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[discover] ${label} failed:`, msg);
+        warnings.push(`${label}: ${msg}`);
+        return fallback;
+      });
+
     const allResults = await Promise.all([
-      getStrikingDistance(siteUrl).catch(() => [] as KeywordOpportunity[]),
+      catchWith('Striking distance', getStrikingDistance(siteUrl), [] as KeywordOpportunity[]),
       ...competitorUrls.map((url) =>
-        getCompetitorGap(siteUrl, url).catch(() => [] as KeywordOpportunity[])
+        catchWith(`Competitor gap (${url})`, getCompetitorGap(siteUrl, url), [] as KeywordOpportunity[])
       ),
-      getUnownedOpportunities(siteUrl).catch(() => [] as KeywordOpportunity[]),
+      catchWith('Unowned topics', getUnownedOpportunities(siteUrl), [] as KeywordOpportunity[]),
     ]);
 
     const striking = allResults[0];
@@ -108,6 +122,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ...result,
       competitors_checked: competitorUrls.length,
+      warnings,
     });
   } catch (err) {
     console.error('Opportunity discovery error:', err);
