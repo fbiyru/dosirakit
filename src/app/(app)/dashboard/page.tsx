@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { RecentArticles } from '@/components/dashboard/RecentArticles';
-import { PenLine, Archive, Settings, TrendingUp } from 'lucide-react';
+import { Archive, Settings, TrendingUp } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -98,10 +98,10 @@ export default function DashboardPage() {
 
           {/* Quick action */}
           <Card className="flex items-center justify-center">
-            <Link href="/article/new">
+            <Link href="/opportunities">
               <Button className="text-lg px-8 py-4">
-                <PenLine className="w-5 h-5" />
-                New Article
+                <TrendingUp className="w-5 h-5" />
+                Find Opportunities
               </Button>
             </Link>
           </Card>
