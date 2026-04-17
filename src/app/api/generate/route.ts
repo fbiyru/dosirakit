@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getAnthropicClient } from '@/lib/claude/client';
-import { buildArticlePrompt } from '@/lib/claude/prompts';
+import { buildArticlePrompt, BriefContext } from '@/lib/claude/prompts';
 import { handleAnthropicError } from '@/lib/claude/errors';
 import { scanForViolations, buildFixPrompt } from '@/lib/claude/validate-article';
 
@@ -45,12 +45,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch brand settings
-    const { data: settings } = await supabase
-      .from('brand_settings')
-      .select('*')
-      .eq('brand_id', article.brand_id)
-      .single();
+    // Fetch brand settings (and brief if linked to an opportunity)
+    const [{ data: settings }, briefResult] = await Promise.all([
+      supabase
+        .from('brand_settings')
+        .select('*')
+        .eq('brand_id', article.brand_id)
+        .single(),
+      article.opportunity_id
+        ? supabase
+            .from('briefs')
+            .select('brief_content')
+            .eq('opportunity_id', article.opportunity_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
     if (!settings) {
       return new Response(
@@ -59,8 +70,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const brief = briefResult.data?.brief_content as BriefContext | undefined;
+
     // Build prompt
-    const prompt = buildArticlePrompt(settings, angle, article);
+    const prompt = buildArticlePrompt(settings, angle, article, brief);
 
     // Stream response from Claude
     const anthropic = getAnthropicClient();

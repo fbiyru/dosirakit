@@ -25,10 +25,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Article content not found' }, { status: 404 });
     }
 
-    // Fetch article for brand_id and focus keyword
+    // Fetch article for brand_id, focus keyword, and linked opportunity
     const { data: article } = await supabase
       .from('articles')
-      .select('brand_id, focus_keyword')
+      .select('brand_id, focus_keyword, opportunity_id')
       .eq('id', article_id)
       .single();
 
@@ -69,16 +69,27 @@ export async function POST(request: Request) {
       }
     );
 
-    // Update article status
-    await supabase
-      .from('articles')
-      .update({
-        status: 'published',
-        wp_post_id: result.post_id,
-        wp_post_url: result.post_url,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', article_id);
+    // Update article status (and linked opportunity if any)
+    await Promise.all([
+      supabase
+        .from('articles')
+        .update({
+          status: 'published',
+          wp_post_id: result.post_id,
+          wp_post_url: result.post_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', article_id),
+      article?.opportunity_id
+        ? supabase
+            .from('opportunities')
+            .update({
+              status: 'published',
+              wordpress_url: result.post_url,
+            })
+            .eq('id', article.opportunity_id)
+        : Promise.resolve(),
+    ]);
 
     return NextResponse.json({
       post_id: result.post_id,
