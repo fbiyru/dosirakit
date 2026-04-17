@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { RecentArticles } from '@/components/dashboard/RecentArticles';
-import { PenLine, Archive, Settings } from 'lucide-react';
+import { PenLine, Archive, Settings, TrendingUp } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -119,11 +119,17 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick links */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link href="/archive">
             <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
               <Archive className="w-5 h-5 text-accent" />
               <span className="font-medium text-text">View All Articles</span>
+            </Card>
+          </Link>
+          <Link href="/opportunities">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-accent" />
+              <span className="font-medium text-text">Find Opportunities</span>
             </Card>
           </Link>
           <Link href="/settings">
