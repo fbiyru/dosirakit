@@ -7,7 +7,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Trash2, ChevronRight } from 'lucide-react';
+import { Loader2, Search, Trash2, ChevronRight, FileText } from 'lucide-react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 interface KeywordOpportunity {
@@ -464,6 +465,13 @@ export default function OpportunitiesPage() {
                       </td>
                       <td className="px-6 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/opportunities/${opp.id}/brief`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-light text-accent-dark hover:bg-accent hover:text-white transition-colors duration-200"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            {opp.status === 'new' ? 'Build brief' : 'View brief'}
+                          </Link>
                           <button
                             onClick={() => handleDelete(opp.id)}
                             disabled={deleting === opp.id}

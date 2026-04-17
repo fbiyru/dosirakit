@@ -191,6 +191,85 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences:
 }`;
 }
 
+interface BriefInput {
+  keyword: string;
+  volume: number | null;
+  kd: number | null;
+  opportunity_type: string;
+}
+
+/**
+ * Build the prompt used by /api/briefs to generate a full content brief.
+ * Uses the opportunity keyword, brand context, site map (for internal linking),
+ * competitor list, and voice profile.
+ */
+export function buildBriefPrompt(
+  brandSettings: BrandSettings,
+  opportunity: BriefInput,
+  existingUrls: string[] | null,
+  competitors: string[]
+): string {
+  const urlList =
+    existingUrls && existingUrls.length > 0
+      ? existingUrls.slice(0, 100).join('\n')
+      : 'No URL map available.';
+
+  const competitorList =
+    competitors.length > 0 ? competitors.join(', ') : 'None specified.';
+
+  return `You are an SEO content strategist building a detailed writing brief for ${brandSettings.site_name || 'a food blog'}.
+
+BRAND CONTEXT:
+- Site name: ${brandSettings.site_name || 'Unknown'}
+- Audience: ${brandSettings.target_audience || 'General food enthusiasts'}
+- Tone & voice: ${brandSettings.tone_and_voice || 'Warm and approachable'}
+- Content rules: ${brandSettings.content_guidelines || 'None specified'}
+- Always include: ${brandSettings.things_to_always_include || 'None specified'}
+- Never include: ${brandSettings.things_to_never_include || 'None specified'}
+- Default word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
+- Content categories: ${brandSettings.content_categories?.join(', ') || 'Not set'}
+
+TARGET KEYWORD:
+- Primary keyword: "${opportunity.keyword}"
+- Monthly search volume: ${opportunity.volume ?? 'Unknown'}
+- Keyword difficulty: ${opportunity.kd ?? 'Unknown'}
+- Opportunity type: ${opportunity.opportunity_type.replace(/_/g, ' ')}
+
+COMPETITOR DOMAINS: ${competitorList}
+
+EXISTING SITE URLS (for internal link suggestions):
+${urlList}
+
+TASK:
+Generate a comprehensive content brief that a writer can use to produce a high-ranking, on-brand article for "${opportunity.keyword}".
+
+Respond ONLY with a valid JSON object. No preamble, no markdown fences. Schema:
+{
+  "primary_keyword": "${opportunity.keyword}",
+  "long_tail_variants": ["4-6 long-tail keyword variations that target related search intent"],
+  "people_also_ask": ["3-5 real 'People Also Ask' questions relevant to the keyword"],
+  "recommended_title": "A specific, enticing H1 title for the article",
+  "outline": [
+    {
+      "heading": "H2 heading text in sentence case",
+      "subheadings": ["Optional H3 subheadings under this section"],
+      "notes": "What this section should cover and approximately how many words",
+      "word_allocation": 200
+    }
+  ],
+  "target_word_count_min": ${brandSettings.default_word_count_min},
+  "target_word_count_max": ${brandSettings.default_word_count_max},
+  "semantic_keywords": ["8-12 semantically related terms to include naturally throughout"],
+  "internal_links": [
+    {
+      "url": "A URL from the site's existing pages that is relevant to this topic",
+      "anchor_suggestion": "Suggested anchor text for the link"
+    }
+  ],
+  "writing_notes": "2-4 sentences of tone and angle guidance specific to this brief, tied to the brand voice. What angle to take, what to avoid, and how to make this article stand out."
+}`;
+}
+
 /**
  * Build the prompt used by /api/brand-voice/extract.
  * Given scraped site content, Claude returns a structured voice profile
