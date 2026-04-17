@@ -2,12 +2,20 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Trash2, ChevronRight, FileText } from 'lucide-react';
+import {
+  Loader2,
+  Search,
+  Trash2,
+  ChevronRight,
+  FileText,
+  Ban,
+  ChevronDown,
+  X as XIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -37,6 +45,11 @@ interface SavedOpportunity {
   created_at: string;
 }
 
+interface Exclusion {
+  id: string;
+  keyword: string;
+}
+
 type Tab = 'striking_distance' | 'competitor_gaps' | 'unowned';
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -47,7 +60,7 @@ const TAB_LABELS: Record<Tab, string> = {
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   striking_distance: 'You rank 6–20 for these — a small push could get them to page 1.',
-  competitor_gaps: 'Competitors rank for these but you don\'t — gaps worth closing.',
+  competitor_gaps: "Competitors rank for these but you don't — gaps worth closing.",
   unowned: 'Topically relevant keywords with no clear dominant ranker yet.',
 };
 
@@ -76,30 +89,72 @@ function formatVolume(v: number): string {
   return String(v);
 }
 
+function formatAge(ts: number): string {
+  const mins = Math.round((Date.now() - ts) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function cacheKey(brandId: string) {
+  return `dfs_results_${brandId}`;
+}
+
 export default function OpportunitiesPage() {
   const [brandId, setBrandId] = useState<string | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const [results, setResults] = useState<DiscoveryResult | null>(null);
+  const [resultsTs, setResultsTs] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('striking_distance');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<SavedOpportunity[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [exclusions, setExclusions] = useState<Exclusion[]>([]);
+  const [excluding, setExcluding] = useState<Set<string>>(new Set());
+  const [showExclusions, setShowExclusions] = useState(false);
   const router = useRouter();
 
+  // Load brand ID and restore cached results
   useEffect(() => {
     const id = localStorage.getItem('activeBrandId');
     if (!id) { router.push('/dashboard'); return; }
     setBrandId(id);
+
+    const cached = localStorage.getItem(cacheKey(id));
+    if (cached) {
+      try {
+        const { ts, data } = JSON.parse(cached) as {
+          ts: number;
+          data: DiscoveryResult;
+        };
+        setResults(data);
+        setResultsTs(ts);
+        // Restore active tab to first non-empty category
+        const firstTab = (['striking_distance', 'competitor_gaps', 'unowned'] as Tab[]).find(
+          (t) => data[t]?.length > 0
+        );
+        if (firstTab) setActiveTab(firstTab);
+      } catch {}
+    }
   }, [router]);
 
   const loadSaved = useCallback(async (id: string) => {
     setLoadingSaved(true);
-    const res = await fetch(`/api/opportunities?brand_id=${id}`);
-    if (res.ok) {
-      const data = await res.json();
+    const [savedRes, exclusionsRes] = await Promise.all([
+      fetch(`/api/opportunities?brand_id=${id}`),
+      fetch(`/api/keyword-exclusions?brand_id=${id}`),
+    ]);
+    if (savedRes.ok) {
+      const data = await savedRes.json();
       setSaved(data.opportunities ?? []);
+    }
+    if (exclusionsRes.ok) {
+      const data = await exclusionsRes.json();
+      setExclusions(data.exclusions ?? []);
     }
     setLoadingSaved(false);
   }, []);
@@ -111,7 +166,6 @@ export default function OpportunitiesPage() {
   async function handleDiscover() {
     if (!brandId) return;
     setDiscovering(true);
-    setResults(null);
     setSelected(new Set());
 
     try {
@@ -122,7 +176,13 @@ export default function OpportunitiesPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discovery failed');
+
+      const ts = Date.now();
       setResults(data);
+      setResultsTs(ts);
+
+      // Persist to localStorage
+      localStorage.setItem(cacheKey(brandId), JSON.stringify({ ts, data }));
 
       const firstNonEmpty = (['striking_distance', 'competitor_gaps', 'unowned'] as Tab[]).find(
         (t) => data[t]?.length > 0
@@ -132,6 +192,48 @@ export default function OpportunitiesPage() {
       toast.error(err instanceof Error ? err.message : 'Discovery failed');
     } finally {
       setDiscovering(false);
+    }
+  }
+
+  async function handleExclude(keyword: string) {
+    if (!brandId) return;
+    setExcluding((prev) => new Set(prev).add(keyword));
+    try {
+      const res = await fetch('/api/keyword-exclusions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand_id: brandId, keyword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to exclude');
+      setExclusions((prev) => [{ id: data.id, keyword }, ...prev]);
+      toast.success(`"${keyword}" excluded from future runs.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to exclude');
+    } finally {
+      setExcluding((prev) => {
+        const next = new Set(prev);
+        next.delete(keyword);
+        return next;
+      });
+    }
+  }
+
+  async function handleRemoveExclusion(id: string, keyword: string) {
+    try {
+      const res = await fetch('/api/keyword-exclusions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to remove');
+      }
+      setExclusions((prev) => prev.filter((e) => e.id !== id));
+      toast.success(`"${keyword}" removed from exclusions.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove');
     }
   }
 
@@ -171,9 +273,7 @@ export default function OpportunitiesPage() {
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
       toast.success(
-        data.saved === 1
-          ? '1 keyword saved.'
-          : `${data.saved} keywords saved.`
+        data.saved === 1 ? '1 keyword saved.' : `${data.saved} keywords saved.`
       );
       if (data.skipped > 0)
         toast(`${data.skipped} already saved — skipped.`, { icon: 'ℹ️' });
@@ -233,16 +333,21 @@ export default function OpportunitiesPage() {
   }
 
   const savedKeywords = new Set(saved.map((s) => s.keyword.toLowerCase()));
+  const excludedKeywords = new Set(exclusions.map((e) => e.keyword.toLowerCase()));
 
   function getTabItems(tab: Tab): KeywordOpportunity[] {
     if (!results) return [];
-    const raw = results[tab];
-    return raw.filter((k) => !savedKeywords.has(k.keyword.toLowerCase()));
+    return results[tab].filter(
+      (k) =>
+        !savedKeywords.has(k.keyword.toLowerCase()) &&
+        !excludedKeywords.has(k.keyword.toLowerCase())
+    );
   }
 
   const currentItems = getTabItems(activeTab);
   const tabKeys = currentItems.map((k) => `${activeTab}::${k.keyword}`);
-  const allCurrentSelected = tabKeys.length > 0 && tabKeys.every((k) => selected.has(k));
+  const allCurrentSelected =
+    tabKeys.length > 0 && tabKeys.every((k) => selected.has(k));
 
   return (
     <AppShell>
@@ -258,22 +363,29 @@ export default function OpportunitiesPage() {
               Surface keywords worth writing about, ranked by potential.
             </p>
           </div>
-          <Button onClick={handleDiscover} disabled={discovering}>
-            {discovering ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Analysing…
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4" />
-                Find opportunities
-              </>
+          <div className="flex items-center gap-3">
+            {resultsTs && !discovering && (
+              <span className="text-xs text-text-muted">
+                Last run {formatAge(resultsTs)}
+              </span>
             )}
-          </Button>
+            <Button onClick={handleDiscover} disabled={discovering}>
+              {discovering ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analysing…
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  {results ? 'Refresh' : 'Find opportunities'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
-        {/* Discovery results */}
+        {/* Discovery loading */}
         {discovering && (
           <Card className="text-center py-12 space-y-3">
             <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto" />
@@ -283,6 +395,7 @@ export default function OpportunitiesPage() {
           </Card>
         )}
 
+        {/* Warnings */}
         {results && !discovering && results.warnings && results.warnings.length > 0 && (
           <Card className="bg-amber-50 border-amber-200 space-y-1">
             <p className="text-sm font-medium text-amber-800">
@@ -296,6 +409,7 @@ export default function OpportunitiesPage() {
           </Card>
         )}
 
+        {/* Discovery results */}
         {results && !discovering && (
           <Card className="space-y-4">
             {/* Tabs */}
@@ -345,24 +459,35 @@ export default function OpportunitiesPage() {
                           />
                         </th>
                         <th className="pb-2 font-medium text-text-muted">Keyword</th>
-                        <th className="pb-2 font-medium text-text-muted text-right pr-4">Volume</th>
-                        <th className="pb-2 font-medium text-text-muted text-right pr-4">KD</th>
-                        <th className="pb-2 font-medium text-text-muted text-right">Potential</th>
+                        <th className="pb-2 font-medium text-text-muted text-right pr-4">
+                          Volume
+                        </th>
+                        <th className="pb-2 font-medium text-text-muted text-right pr-4">
+                          KD
+                        </th>
+                        <th className="pb-2 font-medium text-text-muted text-right">
+                          Potential
+                        </th>
+                        <th className="pb-2 w-8" />
                       </tr>
                     </thead>
                     <tbody>
                       {currentItems.map((kw) => {
                         const key = `${activeTab}::${kw.keyword}`;
                         const isSelected = selected.has(key);
+                        const isExcluding = excluding.has(kw.keyword);
                         return (
                           <tr
                             key={kw.keyword}
-                            className={`border-b border-border last:border-0 transition-colors cursor-pointer ${
+                            className={`border-b border-border last:border-0 transition-colors cursor-pointer group ${
                               isSelected ? 'bg-accent-light/40' : 'hover:bg-surface-alt'
                             }`}
                             onClick={() => toggleSelect(activeTab, kw.keyword)}
                           >
-                            <td className="py-2.5" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              className="py-2.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <input
                                 type="checkbox"
                                 checked={isSelected}
@@ -370,7 +495,9 @@ export default function OpportunitiesPage() {
                                 className="rounded accent-[var(--color-accent)]"
                               />
                             </td>
-                            <td className="py-2.5 font-medium text-text">{kw.keyword}</td>
+                            <td className="py-2.5 font-medium text-text">
+                              {kw.keyword}
+                            </td>
                             <td className="py-2.5 text-right pr-4 text-text-muted">
                               {formatVolume(kw.volume)}
                             </td>
@@ -383,6 +510,23 @@ export default function OpportunitiesPage() {
                             </td>
                             <td className="py-2.5 text-right text-text-muted">
                               ~{formatVolume(kw.traffic_potential)}/mo
+                            </td>
+                            <td
+                              className="py-2.5 text-right"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() => handleExclude(kw.keyword)}
+                                disabled={isExcluding}
+                                title="Exclude from future runs"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-text-muted hover:text-destructive disabled:opacity-50"
+                              >
+                                {isExcluding ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Ban className="w-3.5 h-3.5" />
+                                )}
+                              </button>
                             </td>
                           </tr>
                         );
@@ -430,7 +574,8 @@ export default function OpportunitiesPage() {
           ) : saved.length === 0 ? (
             <Card className="text-center py-8">
               <p className="text-text-muted text-sm">
-                No opportunities saved yet. Run a discovery and select keywords to save.
+                No opportunities saved yet. Run a discovery and select keywords to
+                save.
               </p>
             </Card>
           ) : (
@@ -440,10 +585,16 @@ export default function OpportunitiesPage() {
                   <tr className="border-b border-border text-left">
                     <th className="px-6 py-3 font-medium text-text-muted">Keyword</th>
                     <th className="px-3 py-3 font-medium text-text-muted">Type</th>
-                    <th className="px-3 py-3 font-medium text-text-muted text-right">Vol</th>
-                    <th className="px-3 py-3 font-medium text-text-muted text-right">KD</th>
+                    <th className="px-3 py-3 font-medium text-text-muted text-right">
+                      Vol
+                    </th>
+                    <th className="px-3 py-3 font-medium text-text-muted text-right">
+                      KD
+                    </th>
                     <th className="px-3 py-3 font-medium text-text-muted">Status</th>
-                    <th className="px-6 py-3 font-medium text-text-muted text-right">Actions</th>
+                    <th className="px-6 py-3 font-medium text-text-muted text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -452,7 +603,9 @@ export default function OpportunitiesPage() {
                       key={opp.id}
                       className="border-b border-border last:border-0 hover:bg-surface-alt transition-colors"
                     >
-                      <td className="px-6 py-3 font-medium text-text">{opp.keyword}</td>
+                      <td className="px-6 py-3 font-medium text-text">
+                        {opp.keyword}
+                      </td>
                       <td className="px-3 py-3">
                         <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-surface-alt text-text-muted capitalize">
                           {opp.opportunity_type.replace(/_/g, ' ')}
@@ -507,6 +660,57 @@ export default function OpportunitiesPage() {
             </Card>
           )}
         </div>
+
+        {/* Keyword exclusions */}
+        <div>
+          <button
+            onClick={() => setShowExclusions((s) => !s)}
+            className="flex items-center gap-2 text-sm text-text-muted hover:text-text transition-colors"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${
+                showExclusions ? 'rotate-180' : ''
+              }`}
+            />
+            Excluded keywords
+            {exclusions.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-xs bg-surface-alt">
+                {exclusions.length}
+              </span>
+            )}
+          </button>
+
+          {showExclusions && (
+            <Card className="mt-3 space-y-3">
+              <p className="text-sm text-text-muted">
+                These keywords are hidden from discovery results and won&apos;t
+                appear on future runs. Remove a keyword to bring it back.
+              </p>
+              {exclusions.length === 0 ? (
+                <p className="text-sm text-text-muted italic">No exclusions yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {exclusions.map((ex) => (
+                    <span
+                      key={ex.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-surface-alt border border-border text-text"
+                    >
+                      {ex.keyword}
+                      <button
+                        onClick={() => handleRemoveExclusion(ex.id, ex.keyword)}
+                        className="text-text-muted hover:text-destructive transition-colors"
+                        aria-label={`Remove "${ex.keyword}" from exclusions`}
+                      >
+                        <XIcon className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+
       </div>
     </AppShell>
   );
