@@ -633,11 +633,15 @@ export default function OpportunitiesPage() {
                       <td className="px-6 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            href={`/opportunities/${opp.id}/brief`}
+                            href={
+                              opp.status === 'new'
+                                ? `/opportunities/${opp.id}/angles`
+                                : `/opportunities/${opp.id}/brief`
+                            }
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-light text-accent-dark hover:bg-accent hover:text-white transition-colors duration-200"
                           >
                             <FileText className="w-3.5 h-3.5" />
-                            {opp.status === 'new' ? 'Build brief' : 'View brief'}
+                            {opp.status === 'new' ? 'Select angle' : 'View brief'}
                           </Link>
                           <button
                             onClick={() => handleDelete(opp.id)}

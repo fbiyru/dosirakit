@@ -233,11 +233,18 @@ interface BriefInput {
  * Uses the opportunity keyword, brand context, site map (for internal linking),
  * competitor list, and voice profile.
  */
+interface AngleContext {
+  title: string;
+  description: string;
+  article_type: string;
+}
+
 export function buildBriefPrompt(
   brandSettings: BrandSettings,
   opportunity: BriefInput,
   existingUrls: string[] | null,
-  competitors: string[]
+  competitors: string[],
+  angle?: AngleContext
 ): string {
   const urlList =
     existingUrls && existingUrls.length > 0
@@ -246,6 +253,17 @@ export function buildBriefPrompt(
 
   const competitorList =
     competitors.length > 0 ? competitors.join(', ') : 'None specified.';
+
+  const angleSection = angle
+    ? `
+CHOSEN ANGLE (the writer has already selected this — build the brief around it):
+- Article type: ${angle.article_type}
+- Title direction: "${angle.title}"
+- Notes: ${angle.description}
+
+The recommended title, outline, heading structure, and writing notes must all align with this article type and direction.
+`
+    : '';
 
   return `You are an SEO content strategist building a detailed writing brief for ${brandSettings.site_name || 'a food blog'}.
 
@@ -269,7 +287,7 @@ COMPETITOR DOMAINS: ${competitorList}
 
 EXISTING SITE URLS (for internal link suggestions):
 ${urlList}
-
+${angleSection}
 TASK:
 Generate a comprehensive content brief that a writer can use to produce a high-ranking, on-brand article for "${opportunity.keyword}".
 

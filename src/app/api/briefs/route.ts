@@ -59,7 +59,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const { opportunity_id } = await request.json();
+    const { opportunity_id, article_id } = await request.json();
 
     if (!opportunity_id) {
       return NextResponse.json(
@@ -84,11 +84,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch brand_settings, site_profiles (for URL map), and competitors in parallel
+    // Fetch brand_settings, site_profiles, competitors, and selected angle in parallel
     const [
       { data: settings },
       { data: siteProfile },
       { data: competitors },
+      { data: selectedAngle },
     ] = await Promise.all([
       supabase
         .from('brand_settings')
@@ -104,6 +105,14 @@ export async function POST(request: Request) {
         .from('competitors')
         .select('url')
         .eq('brand_id', opportunity.brand_id),
+      article_id
+        ? supabase
+            .from('article_angles')
+            .select('title, description, article_type')
+            .eq('article_id', article_id)
+            .eq('selected', true)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (!settings) {
@@ -117,8 +126,9 @@ export async function POST(request: Request) {
       ? (siteProfile.url_map as string[])
       : null;
     const competitorUrls = (competitors ?? []).map((c) => c.url);
+    const angle = selectedAngle ?? undefined;
 
-    const prompt = buildBriefPrompt(settings, opportunity, existingUrls, competitorUrls);
+    const prompt = buildBriefPrompt(settings, opportunity, existingUrls, competitorUrls, angle);
 
     const anthropic = getAnthropicClient();
     const response = await anthropic.messages.create({

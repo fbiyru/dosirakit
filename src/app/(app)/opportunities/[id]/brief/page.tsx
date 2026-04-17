@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,9 +54,12 @@ interface Brief {
   created_at: string;
 }
 
-export default function BriefPage() {
+function BriefPageInner() {
   const { id: opportunityId } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const articleId = searchParams.get('article_id');
   const router = useRouter();
+
   const [brief, setBrief] = useState<Brief | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -66,9 +69,7 @@ export default function BriefPage() {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadBrief = useCallback(async () => {
-    const res = await fetch(
-      `/api/briefs?opportunity_id=${opportunityId}`
-    );
+    const res = await fetch(`/api/briefs?opportunity_id=${opportunityId}`);
     if (res.ok) {
       const data = await res.json();
       if (data.brief) {
@@ -90,7 +91,10 @@ export default function BriefPage() {
           const res = await fetch('/api/briefs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ opportunity_id: opportunityId }),
+            body: JSON.stringify({
+              opportunity_id: opportunityId,
+              ...(articleId ? { article_id: articleId } : {}),
+            }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Brief generation failed');
@@ -105,7 +109,7 @@ export default function BriefPage() {
       }
     }
     init();
-  }, [opportunityId, loadBrief]);
+  }, [opportunityId, articleId, loadBrief]);
 
   async function saveBrief(content: BriefContent) {
     if (!brief) return;
@@ -193,6 +197,11 @@ export default function BriefPage() {
 
   const bc = brief.brief_content;
 
+  // Write button destination: new flow has article_id, old flow falls back to /article/new
+  const writeHref = articleId
+    ? `/article/${articleId}/story`
+    : `/article/new?from_brief=${opportunityId}`;
+
   return (
     <AppShell>
       <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -200,7 +209,13 @@ export default function BriefPage() {
         <div className="flex items-center gap-3 flex-wrap">
           <Button
             variant="ghost"
-            onClick={() => router.push('/opportunities')}
+            onClick={() =>
+              router.push(
+                articleId
+                  ? `/opportunities/${opportunityId}/angles`
+                  : '/opportunities'
+              )
+            }
             className="px-3 py-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -210,7 +225,7 @@ export default function BriefPage() {
               Brief: {bc.primary_keyword}
             </h1>
             <p className="text-text-muted text-sm mt-0.5">
-              Edit any section, then write an article from this brief.
+              Edit any section, then start writing.
             </p>
           </div>
           {saving && (
@@ -345,10 +360,7 @@ export default function BriefPage() {
             </p>
             <div className="space-y-2">
               {bc.internal_links.map((link, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 text-sm"
-                >
+                <div key={i} className="flex items-start gap-2 text-sm">
                   <Link2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
                   <div>
                     <p className="text-text break-all">{link.url}</p>
@@ -421,15 +433,31 @@ export default function BriefPage() {
               <Save className="w-4 h-4" />
               Save changes
             </Button>
-            <Link href={`/article/new?from_brief=${opportunityId}`}>
+            <Link href={writeHref}>
               <Button>
                 <PenLine className="w-4 h-4" />
-                Write from brief
+                Start writing
               </Button>
             </Link>
           </div>
         </div>
       </div>
     </AppShell>
+  );
+}
+
+export default function BriefPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        </AppShell>
+      }
+    >
+      <BriefPageInner />
+    </Suspense>
   );
 }
