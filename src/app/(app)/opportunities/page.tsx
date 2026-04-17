@@ -207,6 +207,13 @@ export default function OpportunitiesPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to exclude');
       setExclusions((prev) => [{ id: data.id, keyword }, ...prev]);
+      setSelected((prev) => {
+        const next = new Set(prev);
+        Array.from(next).forEach((key) => {
+          if (key.endsWith(`::${keyword}`)) next.delete(key);
+        });
+        return next;
+      });
       toast.success(`"${keyword}" excluded from future runs.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to exclude');
