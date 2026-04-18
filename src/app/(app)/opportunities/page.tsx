@@ -262,7 +262,8 @@ export default function OpportunitiesPage() {
               : results?.unowned;
           const kw = arr?.find((k) => k.keyword === keyword);
           if (!kw) return null;
-          return { ...kw, opportunity_type: type };
+          const dbType = type === 'competitor_gaps' ? 'competitor_gap' : type;
+          return { ...kw, opportunity_type: dbType };
         })
         .filter(Boolean);
 
