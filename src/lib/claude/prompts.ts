@@ -318,6 +318,104 @@ Respond ONLY with a valid JSON object. No preamble, no markdown fences. Schema:
 }`;
 }
 
+export interface SerpCompetitorData {
+  position: number;
+  url: string;
+  title: string;
+  description: string;
+  headings?: string[];
+  word_count?: number;
+}
+
+export function buildRewritePrompt(
+  brandSettings: BrandSettings,
+  originalContent: string,
+  keyword: string,
+  serpData: SerpCompetitorData[],
+  userNotes: string | null
+): string {
+  const serpSection =
+    serpData.length > 0
+      ? `
+COMPETITIVE ANALYSIS — top ${serpData.length} results currently ranking for "${keyword}":
+${serpData
+  .map(
+    (s) =>
+      `  #${s.position}: "${s.title}" (${s.url})${s.word_count ? ` — ~${s.word_count} words` : ''}${
+        s.headings?.length
+          ? `\n    Headings: ${s.headings.join(' | ')}`
+          : ''
+      }`
+  )
+  .join('\n')}
+
+USE THIS TO:
+- Match or exceed the average word count of the top results
+- Cover topics and subtopics that top-ranking pages address
+- Identify heading patterns and structures that perform well
+- Find content gaps you can fill that competitors miss
+`
+      : '';
+
+  const imagePromptFields = `,
+  "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
+  "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
+  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."`;
+
+  return `You are a skilled food blogger and SEO expert rewriting an existing article for ${brandSettings.site_name || 'a food blog'}.
+
+BRAND VOICE & GUIDELINES:
+- Tone: ${brandSettings.tone_and_voice || 'Warm and approachable'}
+- Target audience: ${brandSettings.target_audience || 'General food enthusiasts'}
+- Content rules: ${brandSettings.content_guidelines || 'None specified'}
+- Always include: ${brandSettings.things_to_always_include || 'None specified'}
+- Never include: ${brandSettings.things_to_never_include || 'None specified'}
+
+ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
+${ANTI_AI_RULES}
+
+PRIMARY KEYWORD TO OPTIMISE FOR: "${keyword}"
+${userNotes ? `\nAUTHOR'S NOTES: ${userNotes}` : ''}
+${serpSection}
+ORIGINAL ARTICLE TO REWRITE:
+---
+${originalContent}
+---
+
+REWRITE INSTRUCTIONS:
+1. Completely rewrite the article to match the brand voice above. This is not a light edit — restructure, rephrase, and rewrite every section.
+2. Optimise for "${keyword}":
+   - Include the exact keyword in the first 100 words
+   - Use it naturally in at least 2-3 H2 subheadings
+   - Weave it and related terms throughout the body
+3. Restructure headings to follow what performs well in the competitive analysis above
+4. Match or exceed the word count of top-ranking competitors (minimum ${brandSettings.default_word_count_min} words)
+5. Preserve all factual information, recipes, measurements, and specific details from the original — do not invent facts
+6. Close content gaps: if top-ranking competitors cover topics the original misses, add those sections
+7. Apply all brand content rules strictly
+
+MANDATORY SELF-CHECK — complete every step before writing your final JSON response:
+1. Scan your entire article for em dashes. Replace EVERY em dash with a comma, period, or parentheses. Zero em dashes allowed.
+2. Scan for EVERY banned word and phrase from the ANTI-AI WRITING RULES above. If any appear, rewrite those sentences completely.
+3. Verify no paragraph opens with Moreover, Furthermore, Additionally, However, Despite, Notably, or When it comes to.
+4. Check for three-adjective patterns before any noun. Cut to 1-2 adjectives maximum.
+5. Remove any trailing present-participle clause that claims significance.
+6. Verify the conclusion does NOT summarise what you just wrote.
+7. Check that you have NOT used "Not only X, but also Y" or "It's not just about X, it's Y" anywhere.
+8. Verify all headings use sentence case, not Title Case Every Word.
+
+Respond ONLY with a valid JSON object. No preamble, no markdown fences:
+{
+  "title": "Full article H1 title, optimised for the keyword",
+  "slug": "url-friendly-slug",
+  "body": "Full rewritten article in markdown. Use ## for H2 subheadings, ### for H3. Use **bold** for key terms.",
+  "meta_title": "SEO title, max 60 characters, include focus keyword",
+  "meta_description": "Conversational, first-person meta description. Under 155 characters. Include the focus keyword naturally.",
+  "category": "Best matching category from: ${brandSettings.content_categories?.join(', ') || 'General'}",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]${imagePromptFields}
+}`;
+}
+
 /**
  * Build the prompt used by /api/brand-voice/extract.
  * Given scraped site content, Claude returns a structured voice profile
