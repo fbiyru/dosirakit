@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { RecentArticles } from '@/components/dashboard/RecentArticles';
-import { Archive, Settings, TrendingUp } from 'lucide-react';
+import { Archive, Settings, TrendingUp, RefreshCw } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -119,7 +119,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick links */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Link href="/rewrite/new">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
+              <RefreshCw className="w-5 h-5 text-accent" />
+              <span className="font-medium text-text">Rewrite Article</span>
+            </Card>
+          </Link>
           <Link href="/archive">
             <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
               <Archive className="w-5 h-5 text-accent" />

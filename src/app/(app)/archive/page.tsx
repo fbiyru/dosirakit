@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Send, Trash2, ExternalLink, Search, Play } from 'lucide-react';
+import { Eye, Send, Trash2, ExternalLink, Search, Play, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Article {
@@ -194,6 +194,11 @@ export default function ArchivePage() {
                         <Link href={`/article/${article.id}/review`}>
                           <Button variant="ghost" className="px-2 py-1.5" title="View">
                             <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Link href={`/rewrite/new?archive_id=${article.id}`}>
+                          <Button variant="ghost" className="px-2 py-1.5" title="Rewrite">
+                            <RefreshCw className="w-4 h-4" />
                           </Button>
                         </Link>
                         {article.status !== 'published' && wpConfigured && (

@@ -158,6 +158,57 @@ export async function getCompetitorGap(
   }
 }
 
+export interface SerpCompetitor {
+  position: number;
+  url: string;
+  title: string;
+  description: string;
+}
+
+/**
+ * Get top organic SERP results for a keyword.
+ * Used by the rewrite feature to analyse what ranks.
+ */
+export async function getSerpResults(
+  keyword: string,
+  limit = 10
+): Promise<SerpCompetitor[]> {
+  const response = await apiPost('/serp/google/organic/live/advanced', [
+    {
+      keyword,
+      language_name: 'English',
+      location_code: 2840,
+      depth: limit,
+    },
+  ]);
+
+  const r = response as {
+    tasks?: Array<{
+      result?: Array<{
+        items?: Array<{
+          type?: string;
+          rank_absolute?: number;
+          url?: string;
+          title?: string;
+          description?: string;
+        }>;
+      }>;
+    }>;
+  };
+
+  const items = r?.tasks?.[0]?.result?.[0]?.items ?? [];
+
+  return items
+    .filter((item) => item.type === 'organic')
+    .slice(0, limit)
+    .map((item) => ({
+      position: item.rank_absolute ?? 0,
+      url: item.url ?? '',
+      title: item.title ?? '',
+      description: item.description ?? '',
+    }));
+}
+
 /**
  * Keywords topically related to the brand's site that it doesn't yet dominate.
  * Returns empty array on error.
