@@ -143,8 +143,17 @@ IMPORTANT: The personal story must feel seamlessly integrated — not dropped in
 
   const imagePromptFields = article.generate_image_prompts ? `,
   "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
+  "image_filename": "SEO-optimised filename for the blog image. Use the focus keyword. Format: lowercase-words-separated-by-hyphens.jpg (no spaces, no underscores). Example: homemade-tteokbokki-recipe.jpg",
+  "image_alt_text": "Descriptive alt text for the blog image. Include the focus keyword naturally. Describe what the image shows for accessibility. Under 125 characters.",
+  "image_meta_description": "Image meta description / caption for CMS. Keyword-rich, describes the image content for search engines. Under 160 characters.",
   "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
-  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."` : '';
+  "image_pinterest_filename": "SEO filename for the Pinterest image. Include the focus keyword and 'pin' or 'pinterest'. Format: lowercase-hyphens.jpg. Example: tteokbokki-recipe-pin.jpg",
+  "image_pinterest_alt_text": "Pinterest-optimised alt text. Include the focus keyword. Describe the image appealingly for Pinterest search. Under 125 characters.",
+  "image_pinterest_meta_description": "Pinterest image description. Keyword-rich, written to encourage saves and clicks. Under 160 characters.",
+  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
+  "image_social_filename": "Filename for the social media image. Include the focus keyword. Format: lowercase-hyphens.jpg. Example: tteokbokki-recipe-instagram.jpg",
+  "image_social_alt_text": "Social media image alt text. Include the focus keyword. Describe the image for accessibility. Under 125 characters.",
+  "image_social_meta_description": "Social media image description / caption. Keyword-rich and engaging. Under 160 characters."` : '';
 
   return `You are a skilled food blogger writing for ${brandSettings.site_name || 'a food blog'}.
 
@@ -359,8 +368,17 @@ USE THIS TO:
 
   const imagePromptFields = `,
   "image_prompt": "Detailed AI image generation prompt for the blog featured image. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}. Landscape orientation (16:9). Focus on the hero shot of the dish/subject. Should look editorial and appetising.",
+  "image_filename": "SEO-optimised filename for the blog image. Use the focus keyword. Format: lowercase-words-separated-by-hyphens.jpg (no spaces, no underscores). Example: homemade-tteokbokki-recipe.jpg",
+  "image_alt_text": "Descriptive alt text for the blog image. Include the focus keyword naturally. Describe what the image shows for accessibility. Under 125 characters.",
+  "image_meta_description": "Image meta description / caption for CMS. Keyword-rich, describes the image content for search engines. Under 160 characters.",
   "image_prompt_pinterest": "AI image generation prompt optimised for Pinterest. Portrait orientation (2:3). Bold, eye-catching composition. Include text overlay space at the top or bottom. Bright, saturated colours. The image should stop a scroller mid-feed. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
-  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}."`;
+  "image_pinterest_filename": "SEO filename for the Pinterest image. Include the focus keyword and 'pin' or 'pinterest'. Format: lowercase-hyphens.jpg. Example: tteokbokki-recipe-pin.jpg",
+  "image_pinterest_alt_text": "Pinterest-optimised alt text. Include the focus keyword. Describe the image appealingly for Pinterest search. Under 125 characters.",
+  "image_pinterest_meta_description": "Pinterest image description. Keyword-rich, written to encourage saves and clicks. Under 160 characters.",
+  "image_prompt_social": "AI image generation prompt optimised for Instagram/TikTok. Square (1:1) or vertical (4:5) format. Lifestyle-oriented, show the dish in context (hands, table setting, cooking process). Warm, inviting, shareable aesthetic. Style: ${brandSettings.image_prompt_style || 'Professional food photography'}.",
+  "image_social_filename": "Filename for the social media image. Include the focus keyword. Format: lowercase-hyphens.jpg. Example: tteokbokki-recipe-instagram.jpg",
+  "image_social_alt_text": "Social media image alt text. Include the focus keyword. Describe the image for accessibility. Under 125 characters.",
+  "image_social_meta_description": "Social media image description / caption. Keyword-rich and engaging. Under 160 characters."`;
 
   return `You are a skilled food blogger and SEO expert rewriting an existing article for ${brandSettings.site_name || 'a food blog'}.
 
