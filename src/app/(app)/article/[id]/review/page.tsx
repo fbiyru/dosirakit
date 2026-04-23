@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { TagInput } from '@/components/ui/tag-input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check, Archive, Send, Loader2, ExternalLink, X, Plug, Image, Camera, Share2 } from 'lucide-react';
+import { Copy, Check, Archive, Send, Loader2, ExternalLink, X, Plug, Image, Camera, Share2, RefreshCw, FileText } from 'lucide-react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -27,6 +28,15 @@ interface ArticleContent {
   image_prompt: string;
   image_prompt_pinterest: string;
   image_prompt_social: string;
+  image_filename: string;
+  image_alt_text: string;
+  image_meta_description: string;
+  image_pinterest_filename: string;
+  image_pinterest_alt_text: string;
+  image_pinterest_meta_description: string;
+  image_social_filename: string;
+  image_social_alt_text: string;
+  image_social_meta_description: string;
   word_count: number;
 }
 
@@ -125,6 +135,15 @@ export default function ReviewPage() {
           image_prompt: data.image_prompt ?? '',
           image_prompt_pinterest: data.image_prompt_pinterest ?? '',
           image_prompt_social: data.image_prompt_social ?? '',
+          image_filename: data.image_filename ?? '',
+          image_alt_text: data.image_alt_text ?? '',
+          image_meta_description: data.image_meta_description ?? '',
+          image_pinterest_filename: data.image_pinterest_filename ?? '',
+          image_pinterest_alt_text: data.image_pinterest_alt_text ?? '',
+          image_pinterest_meta_description: data.image_pinterest_meta_description ?? '',
+          image_social_filename: data.image_social_filename ?? '',
+          image_social_alt_text: data.image_social_alt_text ?? '',
+          image_social_meta_description: data.image_social_meta_description ?? '',
           word_count: data.word_count ?? 0,
         });
       }
@@ -161,6 +180,15 @@ export default function ReviewPage() {
             image_prompt: newContent.image_prompt,
             image_prompt_pinterest: newContent.image_prompt_pinterest,
             image_prompt_social: newContent.image_prompt_social,
+            image_filename: newContent.image_filename,
+            image_alt_text: newContent.image_alt_text,
+            image_meta_description: newContent.image_meta_description,
+            image_pinterest_filename: newContent.image_pinterest_filename,
+            image_pinterest_alt_text: newContent.image_pinterest_alt_text,
+            image_pinterest_meta_description: newContent.image_pinterest_meta_description,
+            image_social_filename: newContent.image_social_filename,
+            image_social_alt_text: newContent.image_social_alt_text,
+            image_social_meta_description: newContent.image_social_meta_description,
             word_count: newContent.word_count,
             updated_at: new Date().toISOString(),
           })
@@ -376,12 +404,13 @@ export default function ReviewPage() {
               </div>
             </div>
 
-            {/* Image Prompts — only show if at least one prompt exists */}
+            {/* Image Prompts & Metadata — only show if at least one prompt exists */}
             {(content.image_prompt || content.image_prompt_pinterest || content.image_prompt_social) && (
-            <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-              <h3 className="font-display text-lg font-semibold text-text">Image Prompts</h3>
+            <div className="bg-surface border border-border rounded-2xl p-5 space-y-5">
+              <h3 className="font-display text-lg font-semibold text-text">Image Prompts & SEO</h3>
 
-              <div>
+              {/* Blog featured image */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-text flex items-center gap-1.5">
                     <Image className="w-3.5 h-3.5 text-accent" />
@@ -395,9 +424,51 @@ export default function ReviewPage() {
                   className="min-h-[80px] text-sm"
                   placeholder="AI image prompt for the blog featured image..."
                 />
+                {(content.image_filename || content.image_alt_text || content.image_meta_description) && (
+                  <div className="bg-surface-alt rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-medium text-text-muted flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      Image SEO metadata
+                    </p>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Filename</label>
+                        <CopyButton value={content.image_filename} />
+                      </div>
+                      <Input
+                        value={content.image_filename}
+                        onChange={(e) => autoSave({ image_filename: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Alt text</label>
+                        <CopyButton value={content.image_alt_text} />
+                      </div>
+                      <Input
+                        value={content.image_alt_text}
+                        onChange={(e) => autoSave({ image_alt_text: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Meta description</label>
+                        <CopyButton value={content.image_meta_description} />
+                      </div>
+                      <Input
+                        value={content.image_meta_description}
+                        onChange={(e) => autoSave({ image_meta_description: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
+              {/* Pinterest */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-text flex items-center gap-1.5">
                     <Camera className="w-3.5 h-3.5 text-red-500" />
@@ -411,9 +482,51 @@ export default function ReviewPage() {
                   className="min-h-[80px] text-sm"
                   placeholder="AI image prompt optimised for Pinterest (portrait 2:3)..."
                 />
+                {(content.image_pinterest_filename || content.image_pinterest_alt_text || content.image_pinterest_meta_description) && (
+                  <div className="bg-surface-alt rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-medium text-text-muted flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      Image SEO metadata
+                    </p>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Filename</label>
+                        <CopyButton value={content.image_pinterest_filename} />
+                      </div>
+                      <Input
+                        value={content.image_pinterest_filename}
+                        onChange={(e) => autoSave({ image_pinterest_filename: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Alt text</label>
+                        <CopyButton value={content.image_pinterest_alt_text} />
+                      </div>
+                      <Input
+                        value={content.image_pinterest_alt_text}
+                        onChange={(e) => autoSave({ image_pinterest_alt_text: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Meta description</label>
+                        <CopyButton value={content.image_pinterest_meta_description} />
+                      </div>
+                      <Input
+                        value={content.image_pinterest_meta_description}
+                        onChange={(e) => autoSave({ image_pinterest_meta_description: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div>
+              {/* Social */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-text flex items-center gap-1.5">
                     <Share2 className="w-3.5 h-3.5 text-purple-500" />
@@ -427,6 +540,47 @@ export default function ReviewPage() {
                   className="min-h-[80px] text-sm"
                   placeholder="AI image prompt for Instagram/TikTok (square or 4:5)..."
                 />
+                {(content.image_social_filename || content.image_social_alt_text || content.image_social_meta_description) && (
+                  <div className="bg-surface-alt rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-medium text-text-muted flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      Image SEO metadata
+                    </p>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Filename</label>
+                        <CopyButton value={content.image_social_filename} />
+                      </div>
+                      <Input
+                        value={content.image_social_filename}
+                        onChange={(e) => autoSave({ image_social_filename: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Alt text</label>
+                        <CopyButton value={content.image_social_alt_text} />
+                      </div>
+                      <Input
+                        value={content.image_social_alt_text}
+                        onChange={(e) => autoSave({ image_social_alt_text: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-text-muted">Meta description</label>
+                        <CopyButton value={content.image_social_meta_description} />
+                      </div>
+                      <Input
+                        value={content.image_social_meta_description}
+                        onChange={(e) => autoSave({ image_social_meta_description: e.target.value })}
+                        className="text-sm h-8"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             )}
@@ -456,6 +610,12 @@ export default function ReviewPage() {
             <Archive className="w-4 h-4" />
             {archiving ? 'Archiving...' : 'Archive Article'}
           </Button>
+          <Link href={`/rewrite/new?archive_id=${articleId}`}>
+            <Button variant="secondary">
+              <RefreshCw className="w-4 h-4" />
+              Rewrite
+            </Button>
+          </Link>
           {wpConfigured ? (
             <Button onClick={handlePublish} disabled={publishing}>
               {publishing ? (

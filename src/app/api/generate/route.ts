@@ -156,6 +156,15 @@ export async function POST(request: Request) {
               image_prompt: parsed.image_prompt || null,
               image_prompt_pinterest: parsed.image_prompt_pinterest || null,
               image_prompt_social: parsed.image_prompt_social || null,
+              image_filename: parsed.image_filename || null,
+              image_alt_text: parsed.image_alt_text || null,
+              image_meta_description: parsed.image_meta_description || null,
+              image_pinterest_filename: parsed.image_pinterest_filename || null,
+              image_pinterest_alt_text: parsed.image_pinterest_alt_text || null,
+              image_pinterest_meta_description: parsed.image_pinterest_meta_description || null,
+              image_social_filename: parsed.image_social_filename || null,
+              image_social_alt_text: parsed.image_social_alt_text || null,
+              image_social_meta_description: parsed.image_social_meta_description || null,
               word_count: wordCount,
             });
           }
