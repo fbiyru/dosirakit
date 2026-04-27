@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { RecentArticles } from '@/components/dashboard/RecentArticles';
-import { Archive, Settings, TrendingUp, RefreshCw } from 'lucide-react';
+import { Archive, Settings, TrendingUp, RefreshCw, PenLine } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -96,11 +96,17 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          {/* Quick action */}
-          <Card className="flex items-center justify-center">
-            <Link href="/opportunities">
+          {/* Quick actions */}
+          <Card className="flex flex-col items-center justify-center gap-3">
+            <Link href="/article/new">
               <Button className="text-lg px-8 py-4">
-                <TrendingUp className="w-5 h-5" />
+                <PenLine className="w-5 h-5" />
+                New Article
+              </Button>
+            </Link>
+            <Link href="/opportunities">
+              <Button variant="secondary" className="px-6 py-2">
+                <TrendingUp className="w-4 h-4" />
                 Find Opportunities
               </Button>
             </Link>
@@ -119,7 +125,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick links */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <Link href="/article/new">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
+              <PenLine className="w-5 h-5 text-accent" />
+              <span className="font-medium text-text">New Article</span>
+            </Card>
+          </Link>
           <Link href="/rewrite/new">
             <Card className="hover:shadow-md transition-shadow cursor-pointer flex items-center gap-3">
               <RefreshCw className="w-5 h-5 text-accent" />
