@@ -114,6 +114,20 @@ Respond ONLY with a valid JSON array. No preamble, no markdown fences:
 ]`;
 }
 
+export function buildSystemPrompt(brandSettings: BrandSettings): string {
+  return `You are a skilled food blogger writing for ${brandSettings.site_name || 'a food blog'}.
+
+BRAND VOICE & GUIDELINES:
+- Tone: ${brandSettings.tone_and_voice || 'Warm and approachable'}
+- Target audience: ${brandSettings.target_audience || 'General food enthusiasts'}
+- Content rules: ${brandSettings.content_guidelines || 'None specified'}
+- Always include: ${brandSettings.things_to_always_include || 'None specified'}
+- Never include: ${brandSettings.things_to_never_include || 'None specified'}
+
+ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
+${ANTI_AI_RULES}`;
+}
+
 export function buildArticlePrompt(
   brandSettings: BrandSettings,
   angle: Angle,
@@ -155,19 +169,7 @@ IMPORTANT: The personal story must feel seamlessly integrated — not dropped in
   "image_social_alt_text": "Social media image alt text. Include the focus keyword. Describe the image for accessibility. Under 125 characters.",
   "image_social_meta_description": "Social media image description / caption. Keyword-rich and engaging. Under 160 characters."` : '';
 
-  return `You are a skilled food blogger writing for ${brandSettings.site_name || 'a food blog'}.
-
-BRAND VOICE & GUIDELINES:
-- Tone: ${brandSettings.tone_and_voice || 'Warm and approachable'}
-- Target audience: ${brandSettings.target_audience || 'General food enthusiasts'}
-- Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
-
-ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
-${ANTI_AI_RULES}
-
-ARTICLE BRIEF:
+  return `ARTICLE BRIEF:
 - Focus keyword: "${article.focus_keyword}"
 - Article type: ${angle.article_type}
 - Angle/Direction: ${angle.title}

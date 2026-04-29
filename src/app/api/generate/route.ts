@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getAnthropicClient } from '@/lib/claude/client';
-import { buildArticlePrompt, BriefContext } from '@/lib/claude/prompts';
+import { buildArticlePrompt, buildSystemPrompt, BriefContext } from '@/lib/claude/prompts';
 import { handleAnthropicError } from '@/lib/claude/errors';
 import { scanForViolations, buildFixPrompt } from '@/lib/claude/validate-article';
 
@@ -73,6 +73,7 @@ export async function POST(request: Request) {
     const brief = briefResult.data?.brief_content as BriefContext | undefined;
 
     // Build prompt
+    const systemPrompt = buildSystemPrompt(settings);
     const prompt = buildArticlePrompt(settings, angle, article, brief);
 
     // Stream response from Claude
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
     const stream = await anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 4096,
+      system: systemPrompt,
       messages: [{ role: 'user', content: prompt }],
     });
 
