@@ -12,35 +12,24 @@ export default function LoginPage() {
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
+    const supabase = createClient();
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      setError('Supabase is not configured. Create a .env.local file with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
       setLoading(false);
       return;
     }
 
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-
-      router.push('/');
-      router.refresh();
-    } catch {
-      setError('Could not connect to Supabase. Check that NEXT_PUBLIC_SUPABASE_URL is correct and the project is running.');
-      setLoading(false);
-    }
+    router.push('/');
+    router.refresh();
   }
 
   return (
