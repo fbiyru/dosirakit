@@ -173,35 +173,51 @@ export async function getKeywordData(
   keyword: string
 ): Promise<{ volume: number; kd: number } | null> {
   try {
-    const response = await apiPost(
-      '/dataforseo_labs/google/bulk_keyword_difficulty/live',
-      [
+    const [volumeResponse, difficultyResponse] = await Promise.all([
+      apiPost('/keywords_data/google_ads/search_volume/live', [
         {
           keywords: [keyword],
           language_name: 'English',
           location_code: 2840,
         },
-      ]
-    );
+      ]),
+      apiPost('/dataforseo_labs/google/bulk_keyword_difficulty/live', [
+        {
+          keywords: [keyword],
+          language_name: 'English',
+          location_code: 2840,
+        },
+      ]),
+    ]);
 
-    const r = response as {
+    const volR = volumeResponse as {
       tasks?: Array<{
         result?: Array<{
           items?: Array<{
             keyword?: string;
-            keyword_difficulty?: number;
             search_volume?: number;
           }>;
         }>;
       }>;
     };
 
-    const item = r?.tasks?.[0]?.result?.[0]?.items?.[0];
-    if (!item) return null;
+    const kdR = difficultyResponse as {
+      tasks?: Array<{
+        result?: Array<{
+          items?: Array<{
+            keyword?: string;
+            keyword_difficulty?: number;
+          }>;
+        }>;
+      }>;
+    };
+
+    const volItem = volR?.tasks?.[0]?.result?.[0]?.items?.[0];
+    const kdItem = kdR?.tasks?.[0]?.result?.[0]?.items?.[0];
 
     return {
-      volume: item.search_volume ?? 0,
-      kd: item.keyword_difficulty ?? 0,
+      volume: volItem?.search_volume ?? 0,
+      kd: kdItem?.keyword_difficulty ?? 0,
     };
   } catch {
     return null;
