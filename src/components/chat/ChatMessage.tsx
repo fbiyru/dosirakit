@@ -17,7 +17,7 @@ interface ToolCallData {
     keyword: string;
     volume: number;
     kd: number;
-    serp_results: {
+    serp_results?: {
       position: number;
       url: string;
       title: string;
@@ -73,7 +73,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
                 keyword={tc.data.keyword}
                 volume={tc.data.volume}
                 kd={tc.data.kd}
-                serp_results={tc.data.serp_results}
+                serp_results={tc.data.serp_results ?? []}
               />
             );
           }
