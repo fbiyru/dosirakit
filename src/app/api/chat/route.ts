@@ -116,7 +116,7 @@ export async function POST(request: Request) {
               continueLoop = false;
 
               if (textContent) {
-                const chunks = textContent.match(/.{1,100}/gs) || [textContent];
+                const chunks = textContent.match(/.{1,100}/g) || [textContent];
                 for (const chunk of chunks) {
                   send({ type: 'text_delta', text: chunk });
                 }
