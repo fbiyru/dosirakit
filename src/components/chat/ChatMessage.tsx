@@ -1,6 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
+import { marked } from 'marked';
 import { KeywordResearchCard } from './KeywordResearchCard';
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
 
 interface ToolCallData {
   type: 'tool_call' | 'tool_result';
@@ -32,6 +39,11 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === 'user';
+
+  const renderedHtml = useMemo(() => {
+    if (!message.content || isUser) return '';
+    return marked.parse(message.content) as string;
+  }, [message.content, isUser]);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -67,9 +79,18 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
           return null;
         })}
 
-        {message.content && (
+        {message.content && isUser && (
           <div className="text-sm whitespace-pre-wrap leading-relaxed">
             {message.content}
+          </div>
+        )}
+
+        {message.content && !isUser && (
+          <div className="text-sm leading-relaxed">
+            <div
+              className="chat-prose"
+              dangerouslySetInnerHTML={{ __html: renderedHtml }}
+            />
             {isStreaming && (
               <span className="inline-block w-1.5 h-4 bg-accent ml-0.5 animate-pulse" />
             )}
