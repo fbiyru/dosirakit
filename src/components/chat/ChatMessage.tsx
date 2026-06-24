@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { KeywordResearchCard } from './KeywordResearchCard';
 
 marked.setOptions({
@@ -37,13 +37,24 @@ interface ChatMessageProps {
   isStreaming?: boolean;
 }
 
+function normalizeMarkdown(text: string): string {
+  return text
+    .replace(/([^\n])(#{1,3}\s)/g, '$1\n\n$2')
+    .replace(/([^\n])(\*\*Option\s)/g, '$1\n\n$2')
+    .replace(/([.!?:])(-\s)/g, '$1\n$2');
+}
+
+function renderMarkdown(text: string): string {
+  const normalized = normalizeMarkdown(text);
+  const raw = marked.parse(normalized) as string;
+  if (typeof window !== 'undefined') {
+    return DOMPurify.sanitize(raw);
+  }
+  return raw;
+}
+
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === 'user';
-
-  const renderedHtml = useMemo(() => {
-    if (!message.content || isUser) return '';
-    return marked.parse(message.content) as string;
-  }, [message.content, isUser]);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -89,7 +100,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
           <div className="text-sm leading-relaxed">
             <div
               className="chat-prose"
-              dangerouslySetInnerHTML={{ __html: renderedHtml }}
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
             />
             {isStreaming && (
               <span className="inline-block w-1.5 h-4 bg-accent ml-0.5 animate-pulse" />
