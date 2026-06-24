@@ -166,6 +166,49 @@ export interface SerpCompetitor {
 }
 
 /**
+ * Volume and keyword difficulty for a single keyword.
+ * Used by the chat bot to validate keyword ideas in real time.
+ */
+export async function getKeywordData(
+  keyword: string
+): Promise<{ volume: number; kd: number } | null> {
+  try {
+    const response = await apiPost(
+      '/dataforseo_labs/google/bulk_keyword_difficulty/live',
+      [
+        {
+          keywords: [keyword],
+          language_name: 'English',
+          location_code: 2840,
+        },
+      ]
+    );
+
+    const r = response as {
+      tasks?: Array<{
+        result?: Array<{
+          items?: Array<{
+            keyword?: string;
+            keyword_difficulty?: number;
+            search_volume?: number;
+          }>;
+        }>;
+      }>;
+    };
+
+    const item = r?.tasks?.[0]?.result?.[0]?.items?.[0];
+    if (!item) return null;
+
+    return {
+      volume: item.search_volume ?? 0,
+      kd: item.keyword_difficulty ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get top organic SERP results for a keyword.
  * Used by the rewrite feature to analyse what ranks.
  */

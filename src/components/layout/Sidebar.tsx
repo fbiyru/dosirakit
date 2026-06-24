@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Archive, Settings, LogOut, Globe, TrendingUp, RefreshCw, PenLine } from 'lucide-react';
+import { LayoutDashboard, Archive, Settings, LogOut, Globe, TrendingUp, RefreshCw, PenLine, MessageSquare } from 'lucide-react';
 import { BrandSwitcher } from './BrandSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/article/new', label: 'New Article', icon: PenLine },
+  { href: '/chat', label: 'Dosirakit Bot', icon: MessageSquare },
   { href: '/opportunities', label: 'Opportunities', icon: TrendingUp },
   { href: '/rewrite/new', label: 'Rewrite', icon: RefreshCw },
   { href: '/archive', label: 'Archive', icon: Archive },
