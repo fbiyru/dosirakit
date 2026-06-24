@@ -193,10 +193,8 @@ export async function getKeywordData(
     const volR = volumeResponse as {
       tasks?: Array<{
         result?: Array<{
-          items?: Array<{
-            keyword?: string;
-            search_volume?: number;
-          }>;
+          keyword?: string;
+          search_volume?: number;
         }>;
       }>;
     };
@@ -212,8 +210,11 @@ export async function getKeywordData(
       }>;
     };
 
-    const volItem = volR?.tasks?.[0]?.result?.[0]?.items?.[0];
+    const volItem = volR?.tasks?.[0]?.result?.[0];
     const kdItem = kdR?.tasks?.[0]?.result?.[0]?.items?.[0];
+
+    console.log('[DataForSEO] search_volume result:', JSON.stringify(volItem));
+    console.log('[DataForSEO] keyword_difficulty result:', JSON.stringify(kdItem));
 
     return {
       volume: volItem?.search_volume ?? 0,
