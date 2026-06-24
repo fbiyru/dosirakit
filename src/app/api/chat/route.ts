@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
           while (continueLoop) {
             const response = await anthropic.messages.create({
-              model: 'claude-sonnet-4-5-20251001',
+              model: 'claude-sonnet-4-5-20250929',
               max_tokens: 4096,
               system: systemPrompt,
               tools: CHAT_TOOLS,

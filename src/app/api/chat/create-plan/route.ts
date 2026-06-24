@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     ];
 
     const extractionResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2048,
       messages: extractionMessages,
     });
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     );
 
     const briefResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 4096,
       messages: [{ role: 'user', content: briefPrompt }],
     });
