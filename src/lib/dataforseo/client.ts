@@ -167,58 +167,45 @@ export interface SerpCompetitor {
 
 /**
  * Volume and keyword difficulty for a single keyword.
- * Used by the chat bot to validate keyword ideas in real time.
+ * Uses keyword_overview which returns both metrics in one API call.
  */
 export async function getKeywordData(
   keyword: string
 ): Promise<{ volume: number; kd: number } | null> {
   try {
-    const [volumeResponse, difficultyResponse] = await Promise.all([
-      apiPost('/keywords_data/google_ads/search_volume/live', [
+    const response = await apiPost(
+      '/dataforseo_labs/google/keyword_overview/live',
+      [
         {
           keywords: [keyword],
           language_name: 'English',
           location_code: 2840,
         },
-      ]),
-      apiPost('/dataforseo_labs/google/bulk_keyword_difficulty/live', [
-        {
-          keywords: [keyword],
-          language_name: 'English',
-          location_code: 2840,
-        },
-      ]),
-    ]);
+      ]
+    );
 
-    const volR = volumeResponse as {
-      tasks?: Array<{
-        result?: Array<{
-          keyword?: string;
-          search_volume?: number;
-        }>;
-      }>;
-    };
-
-    const kdR = difficultyResponse as {
+    const r = response as {
       tasks?: Array<{
         result?: Array<{
           items?: Array<{
-            keyword?: string;
-            keyword_difficulty?: number;
+            keyword_data?: {
+              keyword?: string;
+              keyword_info?: { search_volume?: number };
+              keyword_properties?: { keyword_difficulty?: number };
+            };
           }>;
         }>;
       }>;
     };
 
-    const volItem = volR?.tasks?.[0]?.result?.[0];
-    const kdItem = kdR?.tasks?.[0]?.result?.[0]?.items?.[0];
+    const item = r?.tasks?.[0]?.result?.[0]?.items?.[0];
+    console.log('[DataForSEO] keyword_overview result:', JSON.stringify(item));
 
-    console.log('[DataForSEO] search_volume result:', JSON.stringify(volItem));
-    console.log('[DataForSEO] keyword_difficulty result:', JSON.stringify(kdItem));
+    if (!item?.keyword_data) return null;
 
     return {
-      volume: volItem?.search_volume ?? 0,
-      kd: kdItem?.keyword_difficulty ?? 0,
+      volume: item.keyword_data.keyword_info?.search_volume ?? 0,
+      kd: item.keyword_data.keyword_properties?.keyword_difficulty ?? 0,
     };
   } catch {
     return null;
