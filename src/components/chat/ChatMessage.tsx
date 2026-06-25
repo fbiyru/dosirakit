@@ -39,9 +39,11 @@ interface ChatMessageProps {
 
 function normalizeMarkdown(text: string): string {
   return text
-    .replace(/([^\n])(#{1,3}\s)/g, '$1\n\n$2')
-    .replace(/([^\n])(\*\*Option\s)/g, '$1\n\n$2')
-    .replace(/([.!?:])(-\s)/g, '$1\n$2');
+    .replace(/([^\n])(#{1,6}\s)/g, '$1\n\n$2')
+    .replace(/([^\n])((?:^|\s)\d+\.\s)/gm, '$1\n$2')
+    .replace(/([.!?*])(\s*-\s)/g, '$1\n$2')
+    .replace(/([^\n])(\*\*[A-Z])/g, '$1\n\n$2')
+    .replace(/---+/g, '\n\n---\n\n');
 }
 
 function renderMarkdown(text: string): string {

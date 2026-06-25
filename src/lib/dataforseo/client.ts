@@ -188,10 +188,12 @@ export async function getKeywordData(
       tasks?: Array<{
         result?: Array<{
           items?: Array<{
-            keyword_data?: {
-              keyword?: string;
-              keyword_info?: { search_volume?: number };
-              keyword_properties?: { keyword_difficulty?: number };
+            keyword?: string;
+            keyword_info?: {
+              search_volume?: number;
+            };
+            keyword_properties?: {
+              keyword_difficulty?: number;
             };
           }>;
         }>;
@@ -199,13 +201,13 @@ export async function getKeywordData(
     };
 
     const item = r?.tasks?.[0]?.result?.[0]?.items?.[0];
-    console.log('[DataForSEO] keyword_overview result:', JSON.stringify(item));
+    console.log('[DataForSEO] keyword_overview item:', JSON.stringify(item?.keyword_info), JSON.stringify(item?.keyword_properties));
 
-    if (!item?.keyword_data) return null;
+    if (!item) return null;
 
     return {
-      volume: item.keyword_data.keyword_info?.search_volume ?? 0,
-      kd: item.keyword_data.keyword_properties?.keyword_difficulty ?? 0,
+      volume: item.keyword_info?.search_volume ?? 0,
+      kd: item.keyword_properties?.keyword_difficulty ?? 0,
     };
   } catch {
     return null;
