@@ -5,8 +5,6 @@ interface BrandSettings {
   target_audience: string | null;
   tone_and_voice: string | null;
   content_guidelines: string | null;
-  things_to_always_include: string | null;
-  things_to_never_include: string | null;
   default_word_count_min: number;
   default_word_count_max: number;
   content_categories: string[] | null;
@@ -41,8 +39,6 @@ BRAND CONTEXT:
 - Audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Tone & voice: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Things to always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Things to never include: ${brandSettings.things_to_never_include || 'None specified'}
 
 TASK:
 Generate exactly 5 distinct article angles for the focus keyword: "${focusKeyword}"
@@ -83,8 +79,6 @@ BRAND CONTEXT:
 - Audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Tone & voice: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Things to always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Things to never include: ${brandSettings.things_to_never_include || 'None specified'}
 
 PREVIOUS ANGLES (the author rejected these):
 ${prevAnglesText}
@@ -121,8 +115,6 @@ BRAND VOICE & GUIDELINES:
 - Tone: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Target audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
 
 ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
 ${ANTI_AI_RULES}`;
@@ -283,8 +275,6 @@ BRAND CONTEXT:
 - Audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Tone & voice: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
 - Default word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
 - Content categories: ${brandSettings.content_categories?.join(', ') || 'Not set'}
 
@@ -388,8 +378,6 @@ BRAND VOICE & GUIDELINES:
 - Tone: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Target audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
 
 ANTI-AI WRITING RULES — THIS IS THE HIGHEST PRIORITY CONSTRAINT. VIOLATIONS WILL CAUSE REJECTION:
 ${ANTI_AI_RULES}
@@ -472,8 +460,6 @@ BRAND CONTEXT:
 - Content categories: ${brandSettings.content_categories?.join(', ') || 'Not set'}
 - Content tags: ${brandSettings.content_tags?.join(', ') || 'Not set'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
 - Target word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
 
 YOUR ROLE:
@@ -520,8 +506,6 @@ BRAND CONTEXT:
 - Audience: ${brandSettings.target_audience || 'General food enthusiasts'}
 - Tone & voice: ${brandSettings.tone_and_voice || 'Warm and approachable'}
 - Content rules: ${brandSettings.content_guidelines || 'None specified'}
-- Always include: ${brandSettings.things_to_always_include || 'None specified'}
-- Never include: ${brandSettings.things_to_never_include || 'None specified'}
 - Default word count: ${brandSettings.default_word_count_min}–${brandSettings.default_word_count_max} words
 - Content categories: ${brandSettings.content_categories?.join(', ') || 'Not set'}
 

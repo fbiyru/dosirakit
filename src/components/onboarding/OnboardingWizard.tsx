@@ -43,8 +43,6 @@ export interface OnboardingData {
   first_person: 'yes' | 'no' | 'sometimes';
   // Step 4
   content_guidelines: string;
-  things_to_always_include: string;
-  things_to_never_include: string;
   // Step 5
   default_word_count_min: number;
   default_word_count_max: number;
@@ -70,8 +68,6 @@ const DEFAULT_DATA: OnboardingData = {
   voice_adjectives: [],
   first_person: 'yes',
   content_guidelines: '',
-  things_to_always_include: '',
-  things_to_never_include: '',
   default_word_count_min: 800,
   default_word_count_max: 1200,
   content_categories: [],
@@ -133,8 +129,6 @@ export function OnboardingWizard({ brandId, isNewBrand }: OnboardingWizardProps)
           target_audience: data.target_audience,
           brand_story: data.brand_story,
           content_guidelines: data.content_guidelines,
-          things_to_always_include: data.things_to_always_include,
-          things_to_never_include: data.things_to_never_include,
           default_word_count_min: data.default_word_count_min,
           default_word_count_max: data.default_word_count_max,
           content_categories: data.content_categories,

@@ -19,8 +19,6 @@ interface BrandSettings {
   brand_story: string | null;
   unique_selling_points: string | null;
   content_guidelines: string | null;
-  things_to_always_include: string | null;
-  things_to_never_include: string | null;
   default_word_count_min: number;
   default_word_count_max: number;
   content_categories: string[] | null;
@@ -51,9 +49,7 @@ const SECTIONS: FieldSection[] = [
   { label: 'Brand story', key: 'brand_story', type: 'textarea', editable: true, wide: true },
   { label: 'Target audience', key: 'target_audience', type: 'textarea', editable: true },
   { label: 'Tone and voice', key: 'tone_and_voice', type: 'textarea', editable: true, wide: true },
-  { label: 'Content guidelines / restrictions', key: 'content_guidelines', type: 'textarea', editable: true, wide: true },
-  { label: 'Things to always include', key: 'things_to_always_include', type: 'textarea', editable: true },
-  { label: 'Things to never include', key: 'things_to_never_include', type: 'textarea', editable: true },
+  { label: 'Content rules and restrictions', key: 'content_guidelines', type: 'textarea', editable: true, wide: true },
   { label: 'Content categories', key: 'content_categories', type: 'tags', editable: true, wide: true },
   { label: 'Image prompt style', key: 'image_prompt_style', type: 'textarea', editable: true, wide: true },
   { label: 'WordPress site URL', key: 'wp_site_url', type: 'text', editable: true },

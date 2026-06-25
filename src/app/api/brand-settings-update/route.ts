@@ -18,8 +18,6 @@ export async function POST(request: Request) {
       brand_story: current_settings.brand_story || '',
       unique_selling_points: current_settings.unique_selling_points || '',
       content_guidelines: current_settings.content_guidelines || '',
-      things_to_always_include: current_settings.things_to_always_include || '',
-      things_to_never_include: current_settings.things_to_never_include || '',
       default_word_count_min: current_settings.default_word_count_min || 800,
       default_word_count_max: current_settings.default_word_count_max || 1200,
       content_categories: current_settings.content_categories || [],

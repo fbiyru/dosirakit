@@ -13,27 +13,12 @@ export function Step4ContentRules({ data, updateData }: StepProps) {
     <div className="space-y-5">
       <h2 className="font-display text-xl font-semibold text-text">Content Rules</h2>
       <Textarea
-        label="Content restrictions"
-        hint="E.g. no alcohol references, always mention allergens, vegetarian-friendly only"
+        label="Content rules and restrictions"
+        hint="Include everything: dietary rules, things to always mention, things to never say, brand-specific dos and don'ts"
         value={data.content_guidelines}
         onChange={(e) => updateData({ content_guidelines: e.target.value })}
-        placeholder="List any content restrictions or requirements..."
-      />
-      <div>
-        <Textarea
-          label="Things to ALWAYS include across all articles"
-          hint="AI will adapt how these are applied depending on the article type (recipe, guide, listicle, etc.)"
-          value={data.things_to_always_include}
-          onChange={(e) => updateData({ things_to_always_include: e.target.value })}
-          placeholder="E.g. prep time, difficulty level, serving suggestions, source links..."
-        />
-      </div>
-      <Textarea
-        label="Things to NEVER include — universal rules and brand-specific rules"
-        hint="Mix both universal rules (e.g. no AI clichés) and brand-specific rules (e.g. never mention competitor brands) in one list"
-        value={data.things_to_never_include}
-        onChange={(e) => updateData({ things_to_never_include: e.target.value })}
-        placeholder="E.g. never use the word 'delicious', never compare cuisines, no unverified health claims..."
+        placeholder={"E.g.\n- Halal-only, no pork, no alcohol\n- Always mention prep time and difficulty level\n- Never use the word 'delicious'\n- Never compare cuisines\n- Always note when a dish can be made vegetarian"}
+        rows={8}
       />
     </div>
   );

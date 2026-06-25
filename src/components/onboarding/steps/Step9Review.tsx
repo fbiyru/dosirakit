@@ -86,9 +86,7 @@ export function Step9Review({ data, goToStep }: StepProps) {
       </ReviewSection>
 
       <ReviewSection title="Content Rules" stepIndex={3} goToStep={goToStep}>
-        <Field label="Guidelines" value={data.content_guidelines} />
-        <Field label="Always include" value={data.things_to_always_include} />
-        <Field label="Never include" value={data.things_to_never_include} />
+        <Field label="Content rules" value={data.content_guidelines} />
       </ReviewSection>
 
       <ReviewSection title="Content Structure" stepIndex={4} goToStep={goToStep}>
